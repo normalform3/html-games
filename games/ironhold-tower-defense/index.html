@@ -104,8 +104,9 @@
     50%{box-shadow:0 6px 28px -8px rgba(240,211,145,.72),inset 0 1px 0 rgba(255,255,255,.4)}
   }
   .btn.small{padding:9px 11px;font-family:var(--mono);font-size:11px;min-width:43px}
-  .btn.sound-btn{min-width:40px;padding:8px 10px;display:inline-flex;align-items:center;justify-content:center}
-  .btn.sound-btn svg{width:17px;height:17px;overflow:visible}
+  .btn.sound-btn,.btn.codex-btn{min-width:40px;padding:8px 10px;display:inline-flex;align-items:center;justify-content:center}
+  .btn.sound-btn svg,.btn.codex-btn svg{width:17px;height:17px;overflow:visible}
+  .btn.codex-btn{color:#c9b78f}
   .btn.sound-btn .mute-x{display:none}
   .btn.sound-btn.muted .sound-wave{display:none}
   .btn.sound-btn.muted .mute-x{display:block}
@@ -258,6 +259,63 @@
   .level-foot{display:flex;align-items:center;justify-content:center;gap:9px;margin:0;text-align:center;font-size:9px;letter-spacing:.08em;color:#665f51}
   .level-foot span{color:var(--gold);opacity:.55;font-size:7px}
 
+  /* ---------- codex ---------- */
+  .codex-overlay{
+    position:fixed;inset:0;z-index:52;display:flex;align-items:center;justify-content:center;
+    padding:24px;overflow:auto;overscroll-behavior:contain;
+    background:
+      radial-gradient(1100px 560px at 50% -12%,rgba(58,74,52,.5),transparent 64%),
+      rgba(3,7,4,.9);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    opacity:0;pointer-events:none;transition:opacity .28s;
+  }
+  .codex-overlay.show{opacity:1;pointer-events:auto}
+  .codex-screen{position:relative;width:min(1080px,100%);margin:auto;padding:10px 0 4px}
+  .codex-tabs{display:flex;gap:6px;margin:18px 0 16px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  .codex-tab{
+    appearance:none;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:.08em;
+    padding:7px 15px;border:1px solid rgba(224,195,132,.16);border-radius:7px;
+    color:#9d9481;background:rgba(255,255,255,.025);transition:.16s;
+  }
+  .codex-tab:hover{color:#e4d7bb;border-color:rgba(224,195,132,.34)}
+  .codex-tab.active{color:#f1e3c4;border-color:rgba(224,195,132,.55);background:rgba(216,179,106,.12)}
+  .codex-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-bottom:6px}
+  .codex-body.enemies-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .codex-card{
+    display:flex;flex-direction:column;padding:14px;
+    border:1px solid rgba(224,195,132,.16);border-radius:12px;
+    background:
+      radial-gradient(240px 120px at 30% 0%,rgba(216,179,106,.06),transparent 72%),
+      linear-gradient(180deg,rgba(24,33,24,.92),rgba(11,17,12,.94));
+    box-shadow:0 16px 38px -30px #000;
+  }
+  .codex-card-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .codex-icon{
+    display:grid;place-items:center;width:42px;height:42px;flex:none;border-radius:9px;
+    border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);color:var(--cx,var(--gold));
+  }
+  .codex-icon svg{width:28px;height:28px}
+  .codex-card h3{margin:0;font:600 15px/1.2 var(--serif);letter-spacing:.05em;color:#ece0c9}
+  .codex-role{margin:3px 0 0;font-size:8.5px;letter-spacing:.08em;color:var(--muted)}
+  .codex-cost{margin-left:auto;font:600 11px/1 var(--mono);color:var(--gold-hi);white-space:nowrap}
+  .codex-desc{margin:0 0 10px;font-size:10px;line-height:1.7;color:#a89f8b;flex:1}
+  .codex-table{width:100%;border-collapse:collapse;font-size:9px;margin-top:auto}
+  .codex-table th{
+    padding:4px 3px;text-align:right;font-weight:500;color:#7d7564;
+    border-bottom:1px solid rgba(224,195,132,.14);
+  }
+  .codex-table th:first-child,.codex-table td:first-child{text-align:left}
+  .codex-table td{padding:4px 3px;text-align:right;font-family:var(--mono);color:#cfc4ac;border-bottom:1px solid rgba(255,255,255,.035)}
+  .codex-table tr:last-child td{border-bottom:0}
+  .codex-table td:first-child{color:#93896f;font-family:var(--sans)}
+  .codex-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
+  .codex-stat{padding:5px 7px;border:1px solid rgba(255,255,255,.055);border-radius:5px;background:rgba(0,0,0,.13)}
+  .codex-stat span{display:block;font-size:7.5px;letter-spacing:.1em;color:#7d7564;margin-bottom:2px}
+  .codex-stat b{font:600 11px/1.1 var(--mono);color:#e2d6be}
+  .codex-tag{display:inline-flex;align-items:center;gap:4px;margin-top:8px;padding:3px 7px;border-radius:4px;font-size:8px;letter-spacing:.05em;color:#b9a98b;border:1px solid rgba(224,195,132,.14);background:rgba(0,0,0,.14);align-self:flex-start}
+  .codex-note{margin:14px 0 0;text-align:center;font-size:9px;letter-spacing:.06em;color:#665f51}
+  .codex-note b{color:#a89a7c;font-weight:500}
+
   /* ---------- sidebar ---------- */
   .sidebar{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;padding-right:2px}
   .side-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 2px}
@@ -335,6 +393,8 @@
   .sel-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
   .sel-actions .btn{padding:9px 7px;font-size:10.5px;text-align:center}
   .sel-actions .btn.wide{grid-column:1/-1}
+  .sel-actions .rally-btn{border-color:rgba(157,194,216,.3);color:#b9d8e6}
+  .sel-actions .rally-btn.on{border-color:rgba(231,207,150,.65);color:#f1dfb1;background:rgba(216,179,106,.12);box-shadow:inset 0 0 0 1px rgba(231,207,150,.1)}
   .sel-actions .btn.no-money{color:#d89286;border-color:rgba(217,107,95,.32)}
   .sel-actions .btn.primary.no-money{
     color:rgba(52,37,18,.62);border-color:rgba(243,220,162,.48);
@@ -379,7 +439,7 @@
     .hud-item{flex:1;justify-content:center;padding:5px 7px;gap:5px;min-height:33px}
     .hud-label{display:none}
     .hud-item strong{font-size:14px;min-width:0}
-    .controls{order:4;width:100%;display:grid;grid-template-columns:1.55fr .68fr .68fr .55fr;gap:6px}
+    .controls{order:4;width:100%;display:grid;grid-template-columns:1.5fr .62fr .62fr .48fr .48fr;gap:5px}
     .controls .btn{width:100%;padding:9px 7px;font-size:11px}
     .btn.small{min-width:0}
     .map-plate{left:8px;top:8px;transform:scale(.9);transform-origin:top left}
@@ -398,6 +458,10 @@
     .level-desc{min-height:0;font-size:9.5px;line-height:1.55}
     .level-meta{padding-top:5px}
     .level-foot{font-size:8px}
+    .codex-overlay{align-items:flex-start;padding:12px}
+    .codex-screen{padding:14px 0 18px}
+    .codex-body,.codex-body.enemies-grid{grid-template-columns:1fr}
+    .codex-note{font-size:8px}
   }
   @media (max-width:430px){
     .level-map{width:36%;min-height:138px}
@@ -452,6 +516,12 @@
       <button class="btn primary ready" id="btnWave" type="button">出征 · 第 1 波</button>
       <button class="btn small" id="btnSpeed" type="button" title="切换速度 (F)">1×</button>
       <button class="btn small" id="btnPause" type="button" title="暂停 (Space)">暂停</button>
+      <button class="btn small codex-btn" id="btnCodex" type="button" title="图鉴 (C)" aria-label="打开图鉴">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17.5H6.5A2.5 2.5 0 0 0 4 22V4.5Z" fill="rgba(255,255,255,.06)"/>
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M8 6.5h8M8 10h6"/>
+        </svg>
+      </button>
       <button class="btn small sound-btn" id="btnSound" type="button" title="音效：开" aria-label="关闭音效">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 9h4l4.5-3.8v13.6L8 15H4V9Z" fill="rgba(255,255,255,.08)"/>
@@ -560,6 +630,21 @@
   </div>
 </div>
 
+<div class="codex-overlay" id="codexOverlay" aria-hidden="true">
+  <div class="codex-screen" role="dialog" aria-modal="true" aria-labelledby="codexTitle">
+    <button class="level-close" id="btnCloseCodex" type="button" aria-label="关闭图鉴" title="关闭图鉴">×</button>
+    <p class="level-kicker">FIELD COMPENDIUM</p>
+    <h2 id="codexTitle">战场图鉴</h2>
+    <p class="level-lede">查防御设施的每一级数值，以及每位来犯者的生命、护甲与弱点。战局会在图鉴打开时暂停。</p>
+    <div class="codex-tabs" role="tablist">
+      <button class="codex-tab active" id="codexTabTowers" type="button" role="tab" aria-selected="true" data-codex-tab="towers">防御设施</button>
+      <button class="codex-tab" id="codexTabEnemies" type="button" role="tab" aria-selected="false" data-codex-tab="enemies">敌军</button>
+    </div>
+    <div class="codex-body" id="codexBody"></div>
+    <p class="codex-note"><span>◆</span> 提示：<b>兽人盾卫</b>的护甲对物理伤害减免明显，<b>法师塔</b>无视护甲；<b>Boss</b> 无法被士兵阻挡。 <span>◆</span></p>
+  </div>
+</div>
+
 <script>
 (function () {
 'use strict';
@@ -601,6 +686,12 @@ const levelGrid = document.getElementById('levelGrid');
 const btnCloseLevels = document.getElementById('btnCloseLevels');
 const btnNextLevel = document.getElementById('btnNextLevel');
 const btnChooseLevel = document.getElementById('btnChooseLevel');
+const btnCodex = document.getElementById('btnCodex');
+const codexOverlay = document.getElementById('codexOverlay');
+const codexBody = document.getElementById('codexBody');
+const btnCloseCodex = document.getElementById('btnCloseCodex');
+const codexTabTowers = document.getElementById('codexTabTowers');
+const codexTabEnemies = document.getElementById('codexTabEnemies');
 const shop = document.getElementById('shop');
 
 let dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -881,6 +972,8 @@ const state = {
   buildType: null,
   selectedId: null,
   hover: null,
+  rallyMode: false,
+  codexOpen: false,
   towers: [],
   enemies: [],
   soldiers: [],
@@ -1803,6 +1896,7 @@ function tryBuild(type, gx, gy) {
   state.buildType = null;
   state.selectedId = t.id;
   state.hover = null;
+  state.rallyMode = false;
   burst(c.x, c.y, cfg.accent, 13, 55);
   SFX.play('build');
   showToast(cfg.name + '已建成');
@@ -1816,6 +1910,18 @@ function selectTower(id) {
   state.selectedId = id;
   state.buildType = null;
   state.hover = null;
+  // Selecting a barracks never enters rally mode on its own; the player
+  // explicitly presses "移动集结点", and the mode exits after one placement.
+  state.rallyMode = false;
+  SFX.play('click');
+  renderPanel();
+  syncHud(true);
+}
+
+function toggleRallyMode() {
+  const t = getSelected();
+  if (!t || t.type !== 'barracks' || gameOver()) return;
+  state.rallyMode = !state.rallyMode;
   SFX.play('click');
   renderPanel();
   syncHud(true);
@@ -1838,6 +1944,7 @@ function upgradeSelected() {
   state.money -= cost;
   t.invested += cost;
   t.level++;
+  state.rallyMode = false;
   if (t.type === 'barracks') updateBarracksLevel(t);
   const c = towerCenter(t);
   burst(c.x, c.y, TOWERS[t.type].accent, 18, 70);
@@ -1852,6 +1959,7 @@ function sellSelected() {
   if (!t || gameOver()) return;
   const refund = Math.round(t.invested * 0.65);
   state.money += refund;
+  state.rallyMode = false;
   const c = towerCenter(t);
   burst(c.x, c.y, '#d8b36a', 16, 60);
   if (t.type === 'barracks') {
@@ -1887,6 +1995,7 @@ function setRally(t, p) {
   }
   burst(p.x, p.y, '#9dc2d8', 10, 40);
   SFX.play('rally');
+  state.rallyMode = false;
   showToast('集结点已移动');
   renderPanel();
   syncHud(true);
@@ -1964,6 +2073,28 @@ function reviveSoldier(s) {
   s.outOfCombat = 0;
   SFX.play('revive');
   burst(home.x, home.y, '#bfe0ee', 8, 35);
+}
+
+function restSoldiersAfterWave() {
+  let changed = false;
+  for (const s of state.soldiers) {
+    const t = getTower(s.barracksId);
+    if (!t) continue;
+    if (s.dead || s.hp < s.maxHp) changed = true;
+    const home = soldierHome(t, s.slot);
+    s.dead = false;
+    s.respawn = 0;
+    s.hp = s.maxHp;
+    s.targetId = null;
+    s.state = 'idle';
+    s.attackCd = 0;
+    s.outOfCombat = 0;
+    s.homeX = home.x;
+    s.homeY = home.y;
+    s.x = home.x;
+    s.y = home.y;
+  }
+  return changed;
 }
 
 function updateSoldiers(dt) {
@@ -2256,6 +2387,7 @@ function checkWaveClear() {
   const cleared = state.wave;
   const bonus = 25 + 6 * state.wave + currentLevel.clearBonus;
   state.money += bonus;
+  const rested = restSoldiersAfterWave();
   if (cleared >= activeWaves.length) {
     endGame('won');
     return;
@@ -2263,7 +2395,7 @@ function checkWaveClear() {
   state.phase = 'prep';
   state.waveClock = 0;
   SFX.play('clear');
-  showToast('第 ' + cleared + ' 波已清 · 奖励 +' + bonus + ' 金币', 'good');
+  showToast('第 ' + cleared + ' 波已清 · 奖励 +' + bonus + ' 金币' + (rested ? ' · 士兵已整备' : ''), 'good');
   renderPanel();
   syncHud(true);
 }
@@ -2277,6 +2409,7 @@ function endGame(kind) {
   state.buildType = null;
   state.selectedId = null;
   state.hover = null;
+  state.rallyMode = false;
 
   const won = kind === 'won';
   if (won) clearedLevels.add(currentLevelIndex);
@@ -2375,7 +2508,7 @@ function renderPanel() {
       ? '战局已结束 · 点击「再次出征」重新布防'
       : (state.buildType
           ? '<b>建造模式</b> 点击草地放下设施 · Esc 取消'
-          : '<b>1 / 2 / 3</b> 选择设施 · 点击草地建造 · 选中兵营后点击地面设集结点');
+          : '<b>1 / 2 / 3</b> 选择设施 · 点击草地建造 · <b>C</b> 打开图鉴 · 选中兵营后可移动集结点');
     return;
   }
 
@@ -2408,7 +2541,7 @@ function renderPanel() {
       '<div class="stat-cell"><span>生命</span><b>' + stats.hp + '</b></div>' +
       '<div class="stat-cell"><span>近战伤害</span><b>' + stats.damage + '</b></div>' +
       '<div class="stat-cell"><span>复活时间</span><b>' + stats.respawn + 's</b></div>';
-    note = '点击地面移动集结点（兵营周围 130 范围）。士兵脱战后会缓慢回血。';
+    note = '士兵会在集结点附近拦截敌人。<b>每波结束后自动满血复活</b>。点击「移动集结点」可重新选择位置。';
   }
 
   panel.innerHTML =
@@ -2420,13 +2553,18 @@ function renderPanel() {
     '<div class="stat-grid">' + statCells + '</div>' +
     '<p class="sel-note">' + note + '</p>' +
     '<div class="sel-actions">' +
+      (t.type === 'barracks'
+        ? '<button class="btn ghost wide rally-btn' + (state.rallyMode ? ' on' : '') + '" type="button" data-action="rally">' + (state.rallyMode ? '取消移动集结点' : '移动集结点') + '</button>'
+        : '') +
       (max
         ? '<button class="btn ghost wide" type="button" disabled>已达最高等级</button>'
         : '<button class="btn primary wide" type="button" data-action="upgrade">升级 · ◈ ' + cost + '</button>') +
       '<button class="btn ghost wide" type="button" data-action="sell">出售 · 返还 ◈ ' + refund + '</button>' +
     '</div>';
   hintbar.innerHTML = t.type === 'barracks'
-    ? '<b>兵营</b> 点击地面移动集结点 · Esc 取消选择'
+    ? (state.rallyMode
+        ? '<b>设置集结点</b> 点击地面位置 · 设置完成后自动退出 · Esc 取消'
+        : '<b>兵营</b> 点击「移动集结点」调整士兵位置 · Esc 取消选择')
     : '<b>' + cfg.name + '</b> 选中 · 升级或出售 · Esc 取消选择';
   syncHud(true);
 }
@@ -2435,6 +2573,116 @@ function iconFor(type) {
   if (type === 'archer') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 21h12M8.5 21V10h7v11M7 10l5-6 5 6M12 15h3"/></svg>';
   if (type === 'mage') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M7 21h10M9 21V10h6v11M8 10l4-6 4 6"/><circle cx="12" cy="15" r="2"/></svg>';
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 20 7v6.3c0 4.5-3.1 7.3-8 10.2-4.9-2.9-8-5.7-8-10.2V7l8-4.2Z"/><path d="m8.5 12 2.4 2.4 4.6-5"/></svg>';
+}
+
+/* ------------------------------------------------------------------ *
+ *  图鉴
+ * ------------------------------------------------------------------ */
+let codexTab = 'towers';
+
+const CODEX_ENEMY = {
+  goblin: {
+    tag: '基础步兵',
+    note: '成群出现，单体很脆。弓箭塔一轮齐射就能清掉一片，注意别让它们攒成一大团。',
+    icon: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M8 19c0-6 3.4-10 8-10s8 4 8 10c0 4-3.2 7-8 7s-8-3-8-7Z" fill="rgba(94,139,68,.22)"/><path d="M8.4 15 3.5 8.5l1.2 8.5M23.6 15l4.9-6.5-1.2 8.5"/><circle cx="12.4" cy="19" r="1.2" fill="currentColor"/><circle cx="19.6" cy="19" r="1.2" fill="currentColor"/><path d="M13 24c2 1.4 4 1.4 6 0M15 22.5v1.5M17 22.5v1.5"/></svg>'
+  },
+  wolf: {
+    tag: '快速突袭',
+    note: '移动极快，容易从火力边缘溜过。用兵营在拐角拦截，或把输出塔放在路口中段。',
+    icon: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M5 22c-1-4 .4-8 3-10l1.2-6 3.8 3.6h6l3.8-3.6 1.2 6c2.6 2 4 6 3 10-2.2 2-6 3.4-11 3.4S7.2 24 5 22Z" fill="rgba(112,112,106,.22)"/><path d="m11.5 4.5 1 5M20.5 4.5l-1 5"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/><circle cx="20" cy="17" r="1.1" fill="currentColor"/><path d="M16 20v2M13 25.2 11 29M19 25.2 21 29"/></svg>'
+  },
+  orc: {
+    tag: '重甲单位',
+    note: '5 点护甲让物理伤害大打折扣。法师塔的奥术伤害无视护甲，是最稳的解法。',
+    icon: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M16 2.8 27 7.6v9.6c0 6.2-4.8 9.8-11 12.8C9.8 27 5 23.4 5 17.2V7.6L16 2.8Z" fill="rgba(128,83,61,.22)"/><path d="M16 8v14M9.6 12.4h12.8M11 8.6h10"/><path d="m12.3 21 3.7 3.6 3.7-3.6" opacity=".7"/></svg>'
+  },
+  boss: {
+    tag: '首领 · 免疫阻挡',
+    note: '无法被士兵拦截。需要多座高等级输出塔在长直道上集火，并为漏怪预留生命。',
+    icon: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M7 21c-1-6 2.5-12 9-12s10 6 9 12c-2.4 3-5.6 4.6-9 4.6S9.4 24 7 21Z" fill="rgba(155,92,64,.22)"/><path d="M8.5 12.5 6 5.5l5 3M23.5 12.5 26 5.5l-5 3"/><circle cx="12.8" cy="18.5" r="1.4" fill="currentColor"/><circle cx="19.2" cy="18.5" r="1.4" fill="currentColor"/><path d="M11.5 24.5c2.8 1.8 6.2 1.8 9 0M14.5 21.5v2.5M17.5 21.5v2.5"/></svg>'
+  }
+};
+
+function codexTowerCard(type) {
+  const cfg = TOWERS[type];
+  const isBarracks = type === 'barracks';
+  const head = isBarracks
+    ? '<th>等级</th><th>士兵</th><th>生命</th><th>近战</th>'
+    : '<th>等级</th><th>伤害</th><th>射程</th><th>间隔</th>';
+  const rows = cfg.levels.map(function (lv, i) {
+    if (isBarracks) {
+      return '<tr><td>Lv.' + (i + 1) + '</td><td>' + lv.count + '</td><td>' + lv.hp + '</td><td>' + lv.damage + '</td></tr>';
+    }
+    return '<tr><td>Lv.' + (i + 1) + '</td><td>' + lv.damage + '</td><td>' + lv.range + '</td><td>' + lv.interval.toFixed(2) + 's</td></tr>';
+  }).join('');
+  const tag = type === 'archer'
+    ? '3 级：一次射出两支箭'
+    : type === 'mage'
+      ? '奥术伤害 · 无视护甲'
+      : '每波结束自动满血整备';
+  return '<article class="codex-card">' +
+      '<div class="codex-card-top">' +
+        '<div class="codex-icon" style="--cx:' + cfg.accent + '">' + iconFor(type) + '</div>' +
+        '<div><h3>' + cfg.name + '</h3><p class="codex-role">' + cfg.role + '</p></div>' +
+        '<span class="codex-cost">◈ ' + cfg.cost + '</span>' +
+      '</div>' +
+      '<p class="codex-desc">' + cfg.desc + '</p>' +
+      '<table class="codex-table"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<span class="codex-tag">' + tag + '</span>' +
+    '</article>';
+}
+
+function codexEnemyCard(type) {
+  const def = ENEMIES[type];
+  const extra = CODEX_ENEMY[type];
+  return '<article class="codex-card" style="--cx:' + (type === 'boss' ? '#d98a7b' : '#c8b891') + '">' +
+      '<div class="codex-card-top">' +
+        '<div class="codex-icon">' + extra.icon + '</div>' +
+        '<div><h3>' + def.name + '</h3><p class="codex-role">' + extra.tag + '</p></div>' +
+        '<span class="codex-cost">◈ ' + def.gold + '</span>' +
+      '</div>' +
+      '<div class="codex-stats">' +
+        '<div class="codex-stat"><span>生命</span><b>' + def.hp + '</b></div>' +
+        '<div class="codex-stat"><span>速度</span><b>' + def.speed + '</b></div>' +
+        '<div class="codex-stat"><span>护甲</span><b>' + def.armor + '</b></div>' +
+        '<div class="codex-stat"><span>漏怪扣血</span><b>' + def.leak + '</b></div>' +
+      '</div>' +
+      '<p class="codex-desc">' + extra.note + '</p>' +
+    '</article>';
+}
+
+function renderCodex(tab) {
+  codexTab = tab === 'enemies' ? 'enemies' : 'towers';
+  const isEnemies = codexTab === 'enemies';
+  codexTabTowers.classList.toggle('active', !isEnemies);
+  codexTabEnemies.classList.toggle('active', isEnemies);
+  codexTabTowers.setAttribute('aria-selected', String(!isEnemies));
+  codexTabEnemies.setAttribute('aria-selected', String(isEnemies));
+  codexBody.classList.toggle('enemies-grid', isEnemies);
+  codexBody.innerHTML = isEnemies
+    ? ['goblin', 'wolf', 'orc', 'boss'].map(codexEnemyCard).join('')
+    : ['archer', 'barracks', 'mage'].map(codexTowerCard).join('');
+}
+
+function openCodex() {
+  if (state.codexOpen || state.levelMenuOpen) return;
+  state.codexOpen = true;
+  state.buildType = null;
+  state.rallyMode = false;
+  state.hover = null;
+  renderCodex(codexTab);
+  codexOverlay.classList.add('show');
+  codexOverlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('level-open');
+  SFX.play('click');
+}
+
+function closeCodex() {
+  if (!state.codexOpen) return;
+  state.codexOpen = false;
+  codexOverlay.classList.remove('show');
+  codexOverlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('level-open');
 }
 
 function syncHud(force) {
@@ -2558,7 +2806,9 @@ function syncLevelUI() {
 
 function openLevelMenu() {
   if (state.levelMenuOpen) return;
+  if (state.codexOpen) closeCodex();
   state.levelMenuOpen = true;
+  state.rallyMode = false;
   renderLevelCards();
   btnCloseLevels.hidden = !state.levelStarted;
   levelOverlay.classList.add('show');
@@ -2595,6 +2845,8 @@ function startLevel(index) {
   state.buildType = null;
   state.selectedId = null;
   state.hover = null;
+  state.rallyMode = false;
+  state.codexOpen = false;
   state.towers = [];
   state.enemies = [];
   state.soldiers = [];
@@ -2617,6 +2869,8 @@ function startLevel(index) {
   levelOverlay.classList.remove('show');
   levelOverlay.setAttribute('aria-hidden', 'true');
   btnCloseLevels.hidden = true;
+  codexOverlay.classList.remove('show');
+  codexOverlay.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('level-open');
 
   syncLevelUI();
@@ -2634,6 +2888,7 @@ function toggleBuild(type) {
   state.buildType = state.buildType === type ? null : type;
   state.selectedId = null;
   state.hover = null;
+  state.rallyMode = false;
   SFX.play('click');
   renderPanel();
   syncHud(true);
@@ -2683,7 +2938,7 @@ function handleBoardClick(p) {
   }
 
   const sel = getSelected();
-  if (sel && sel.type === 'barracks') {
+  if (sel && sel.type === 'barracks' && state.rallyMode) {
     const c = towerCenter(sel);
     const stats = levelStats(sel);
     if (dist2d(p.x, p.y, c.x, c.y) > stats.rally + 2) {
@@ -2702,6 +2957,7 @@ function handleBoardClick(p) {
   }
 
   state.selectedId = null;
+  state.rallyMode = false;
   renderPanel();
   syncHud(true);
 }
@@ -2717,6 +2973,7 @@ panel.addEventListener('click', ev => {
   if (!btn) return;
   if (btn.dataset.action === 'upgrade') upgradeSelected();
   if (btn.dataset.action === 'sell') sellSelected();
+  if (btn.dataset.action === 'rally') toggleRallyMode();
 });
 
 function updateSoundButton() {
@@ -2739,6 +2996,24 @@ btnSound.addEventListener('click', () => {
 });
 btnMap.addEventListener('click', openLevelMenu);
 btnChooseLevel.addEventListener('click', openLevelMenu);
+btnCodex.addEventListener('click', openCodex);
+btnCloseCodex.addEventListener('click', () => {
+  SFX.play('click');
+  closeCodex();
+});
+codexTabTowers.addEventListener('click', () => {
+  if (codexTab === 'towers') return;
+  SFX.play('click');
+  renderCodex('towers');
+});
+codexTabEnemies.addEventListener('click', () => {
+  if (codexTab === 'enemies') return;
+  SFX.play('click');
+  renderCodex('enemies');
+});
+codexOverlay.addEventListener('click', ev => {
+  if (ev.target === codexOverlay) closeCodex();
+});
 btnCloseLevels.addEventListener('click', () => {
   if (state.levelStarted) {
     SFX.play('click');
@@ -2789,6 +3064,13 @@ document.addEventListener('keydown', ev => {
   if (ev.repeat) return;
   const tag = (ev.target && ev.target.tagName) || '';
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (state.codexOpen) {
+    if (ev.key === 'Escape' || ev.key === 'c' || ev.key === 'C') {
+      ev.preventDefault();
+      closeCodex();
+    }
+    return;
+  }
   if (state.levelMenuOpen) {
     if (ev.key === 'Escape' && state.levelStarted) {
       ev.preventDefault();
@@ -2805,6 +3087,7 @@ document.addEventListener('keydown', ev => {
     state.buildType = null;
     state.selectedId = null;
     state.hover = null;
+    state.rallyMode = false;
     SFX.play('click');
     renderPanel();
     syncHud(true);
@@ -2818,6 +3101,10 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'f' || ev.key === 'F') {
     ev.preventDefault();
     toggleSpeed();
+  }
+  if (ev.key === 'c' || ev.key === 'C') {
+    ev.preventDefault();
+    openCodex();
   }
 });
 
@@ -2872,9 +3159,13 @@ function drawSelection() {
   const c = towerCenter(t);
   const stats = levelStats(t);
   if (t.type === 'barracks') {
-    rangeCircle(c.x, c.y, stats.rally, '#9dc2d8', 0.035, true);
+    if (state.rallyMode) {
+      rangeCircle(c.x, c.y, stats.rally, '#e7cf96', 0.065, true);
+    } else {
+      rangeCircle(c.x, c.y, stats.rally, '#9dc2d8', 0.035, true);
+    }
     ctx.save();
-    ctx.strokeStyle = 'rgba(157,194,216,.35)';
+    ctx.strokeStyle = state.rallyMode ? 'rgba(231,207,150,.55)' : 'rgba(157,194,216,.35)';
     ctx.setLineDash([3, 5]);
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -3536,7 +3827,7 @@ function loop(now) {
   let dt = (now - lastFrame) / 1000;
   lastFrame = now;
   if (dt > 0.1) dt = 0.1; // avoid huge catch-up after tab switch
-  if (!state.paused && !state.levelMenuOpen && !gameOver()) {
+  if (!state.paused && !state.levelMenuOpen && !state.codexOpen && !gameOver()) {
     state.accumulator += dt * state.speed;
     let steps = 0;
     while (state.accumulator >= STEP && steps < 8) {
@@ -3578,6 +3869,8 @@ if (new URLSearchParams(location.search).has('debug')) {
         speed: state.speed,
         selected: state.selectedId,
         levelMenuOpen: state.levelMenuOpen,
+        codexOpen: state.codexOpen,
+        rallyMode: state.rallyMode,
         towers: state.towers.map(t => ({ id: t.id, type: t.type, gx: t.gx, gy: t.gy, level: t.level, rally: t.rally })),
         enemies: state.enemies.map(e => ({ id: e.id, type: e.type, pathIndex: e.pathIndex, hp: e.hp, maxHp: e.maxHp, dist: e.dist, blockedBy: e.blockedBy })),
         soldiers: state.soldiers.map(s => ({ id: s.id, barracksId: s.barracksId, hp: s.hp, maxHp: s.maxHp, dead: s.dead, targetId: s.targetId, x: s.x, y: s.y }))
@@ -3593,6 +3886,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     grant(n) { state.money += Math.max(0, Math.floor(n || 0)); syncHud(true); },
     spawn(type) { if (ENEMIES[type]) { spawnEnemy(type); syncHud(true); } },
     sound() { return SFX.debugState(); },
+    codex(open) { if (open) openCodex(); else closeCodex(); return state.codexOpen; },
+    codexTab(tab) { renderCodex(tab); return codexTab; },
     select(id) { selectTower(id); },
     upgrade() { upgradeSelected(); },
     sell() { sellSelected(); },

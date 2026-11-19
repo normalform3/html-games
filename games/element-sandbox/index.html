@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>元素沙盒 · Element Sandbox</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1100px 520px at 50% -12%, #17212f 0%, transparent 62%),
+      #070a0f;
+    color:#e6ebf2;
+    font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+                "Microsoft YaHei", ui-sans-serif, sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{display:flex;flex-direction:column;height:100%}
+
+  header{
+    padding:8px 16px 9px;
+    border-bottom:1px solid rgba(255,255,255,.07);
+    background:rgba(9,13,19,.76);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    z-index:2;
+  }
+  .nav{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .nav .spacer{flex:1;min-width:8px}
+  .toolbar{display:flex;align-items:center;gap:14px;margin-top:6px}
+  .toolbar .tools{flex:1;min-width:0;gap:3px}
+  .brand{display:flex;align-items:baseline;gap:8px;font-weight:600;font-size:13.5px;white-space:nowrap;letter-spacing:.03em}
+  .brand .en{font-size:8.5px;letter-spacing:.24em;color:#55617a;font-weight:600}
+  .dot{width:6px;height:6px;border-radius:50%;background:#ffb547;box-shadow:0 0 9px #ffb547cc;align-self:center}
+
+  .tools{display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:0}
+  .tool{
+    display:flex;align-items:center;gap:5px;
+    padding:4px 7px;border-radius:8px;cursor:pointer;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.055);
+    color:#b6c1d2;font-size:12px;font-family:inherit;line-height:1.5;
+    transition:background .14s, color .14s, border-color .14s;
+    white-space:nowrap;
+  }
+  .tool:hover{background:rgba(255,255,255,.09);color:#fff}
+  .tool.active{
+    background:rgba(255,255,255,.13);
+    border-color:var(--c,#fff);
+    color:#fff;
+    box-shadow:0 0 14px -4px var(--c,#fff);
+  }
+  .sw{width:9px;height:9px;border-radius:2.5px;flex:none}
+  kbd{
+    font-size:8.5px;color:#5f6a7e;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    border:1px solid rgba(255,255,255,.09);border-radius:3px;padding:0 3px;line-height:13px;
+  }
+  .tool.active kbd{color:#dbe3ee;border-color:rgba(255,255,255,.28)}
+  .tb-sep{
+    font-size:8.5px;letter-spacing:.18em;color:#5a667a;align-self:center;white-space:nowrap;
+    border-left:1px solid rgba(255,255,255,.12);padding-left:8px;margin:0 3px 0 7px;
+  }
+
+  .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .brush{display:flex;align-items:center;gap:6px;font-size:11px;color:#8b97a9;white-space:nowrap}
+  .brush output{font-family:ui-monospace,Menlo,monospace;color:#cfd8e6;min-width:14px;text-align:right;font-size:11px}
+  input[type=range]{
+    width:74px;height:3px;appearance:none;-webkit-appearance:none;
+    background:rgba(255,255,255,.14);border-radius:2px;outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:11px;height:11px;border-radius:50%;
+    background:#ffb547;box-shadow:0 0 8px #ffb54799;cursor:pointer;
+  }
+  .act{
+    font-family:inherit;font-size:11.5px;color:#aab6c8;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+    padding:4px 10px;border-radius:7px;cursor:pointer;transition:.14s;white-space:nowrap;
+  }
+  .act:hover{background:rgba(255,255,255,.1);color:#fff}
+  .act.on{color:#ffb547;border-color:rgba(255,181,71,.4);background:rgba(255,181,71,.1)}
+
+  main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:7px;padding:13px 16px 11px}
+  .stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+  #c{
+    max-width:100%;max-height:100%;width:auto;height:auto;display:block;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.075);
+    box-shadow:0 26px 70px -26px #000, 0 0 0 1px rgba(0,0,0,.6);
+    image-rendering:pixelated;
+    touch-action:none;cursor:crosshair;
+  }
+  .hint{font-size:10.5px;color:#4e596b;letter-spacing:.04em;text-align:center;flex:none}
+  .hint b{color:#7d8a9e;font-weight:500}
+
+  /* ---- 关卡切换 ---- */
+  .levels{display:flex;gap:4px;align-items:center}
+  .chip{
+    font-family:inherit;font-size:11px;line-height:1.5;color:#93a0b4;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+    border-radius:7px;padding:3px 8px;cursor:pointer;transition:.14s;white-space:nowrap;
+  }
+  .chip:hover{background:rgba(255,255,255,.1);color:#fff}
+  .chip.done{color:#4ade80;border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.07)}
+  .chip.on{color:#0c1016;background:#ffb547;border-color:#ffb547;font-weight:600}
+
+  .maps{display:none;align-items:center;gap:4px}
+  .maps.on{display:flex}
+  .maps-label{font-size:8.5px;letter-spacing:.2em;color:#5a667a;margin-right:1px}
+  .map-chip{
+    font-family:inherit;font-size:11px;line-height:1.5;color:#93a0b4;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+    border-radius:7px;padding:3px 8px;cursor:pointer;transition:.14s;white-space:nowrap;
+  }
+  .map-chip:hover{background:rgba(255,255,255,.1);color:#fff}
+  .map-chip.on{color:#0c1016;background:#7dd3fc;border-color:#7dd3fc;font-weight:600}
+
+  /* ---- 说明书 ---- */
+  .manual{
+    position:fixed;inset:0;z-index:40;display:none;
+    background:rgba(4,7,11,.78);backdrop-filter:blur(6px);
+    padding:34px 20px;
+  }
+  .manual.on{display:block}
+  .manual-card{
+    max-width:1120px;margin:0 auto;height:100%;
+    display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#111823,#0a0f16);
+    border:1px solid rgba(255,255,255,.1);border-radius:16px;
+    box-shadow:0 40px 100px -30px #000;overflow:hidden;
+  }
+  .manual-head{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .manual-head b{font-size:14px;letter-spacing:.04em}
+  .manual-head span{font-size:11px;color:#64718a;flex:1}
+  .manual-body{overflow-y:auto;padding:16px 20px 24px;flex:1}
+  .manual-body::-webkit-scrollbar{width:9px}
+  .manual-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:5px}
+  .man-rules{
+    border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);
+    border-radius:10px;padding:12px 16px;margin-bottom:18px;
+  }
+  .man-rules b{font-size:12px;color:#cfd8e6;letter-spacing:.06em}
+  .man-rules ul{margin:7px 0 0;padding-left:18px}
+  .man-rules li{font-size:11.5px;color:#8b98ac;line-height:1.85}
+  .man-rules code{font-family:ui-monospace,Menlo,monospace;color:#ffb547;font-size:11px}
+  .man-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:10px}
+  .ent{
+    border:1px solid rgba(255,255,255,.075);background:rgba(255,255,255,.022);
+    border-radius:10px;padding:11px 13px 12px;
+  }
+  .ent-h{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  .ent-h .sw{width:11px;height:11px;border-radius:3px}
+  .ent-h b{font-size:12.5px;letter-spacing:.02em}
+  .ent-h i{font-style:normal;font-size:9.5px;color:#64718a;margin-left:auto;white-space:nowrap}
+  .ent p{margin:0 0 4px;font-size:11px;line-height:1.6;color:#93a0b4}
+  .ent p:last-child{margin-bottom:0}
+  .ent p em{font-style:normal;color:#5f6b80;margin-right:5px;font-size:9.5px;letter-spacing:.08em}
+  .ent p.hot em{color:#ffb547}
+
+  /* ---- 关卡目标条 ---- */
+  .levelbar{
+    display:none;width:100%;max-width:1200px;flex:none;
+    align-items:center;gap:12px;padding:6px 12px;border-radius:9px;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);
+  }
+  .levelbar.on{display:flex}
+  .lb-title{font-size:12px;font-weight:600;color:#eef3fa;white-space:nowrap}
+  .lb-title span{color:#6b7a90;font-weight:500;margin-right:7px;font-size:10.5px;letter-spacing:.04em}
+  .lb-desc{font-size:11px;color:#8b98ac;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb-bar{width:150px;height:4px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;flex:none}
+  .lb-bar i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,#ffb547,#4ade80);transition:width .2s}
+  .lb-num{font-size:10.5px;font-family:ui-monospace,Menlo,monospace;color:#cfd8e6;min-width:96px;text-align:right;white-space:nowrap}
+
+  /* ---- 通关面板 ---- */
+  .stage{position:relative}
+  .win{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(5,8,13,.62);backdrop-filter:blur(3px);border-radius:10px;z-index:5;
+  }
+  .win.on{display:flex;animation:fade .25s ease-out}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .win-card{
+    background:linear-gradient(180deg,#141c28,#0d131c);
+    border:1px solid rgba(255,255,255,.11);border-radius:15px;
+    padding:24px 30px 20px;text-align:center;
+    box-shadow:0 30px 80px -20px #000, 0 0 60px -30px #ffb547;
+  }
+  .win-card .glyph{font-size:22px;color:#ffb547;margin-bottom:6px;text-shadow:0 0 18px #ffb54788}
+  .win-card h2{margin:0 0 5px;font-size:17px;letter-spacing:.04em;font-weight:600}
+  .win-card p{margin:0 0 18px;font-size:11.5px;color:#8b98ac}
+  .win-btns{display:flex;gap:8px;justify-content:center}
+  .win-btns .act{padding:6px 16px;font-size:12px}
+  .act.primary{background:#ffb547;border-color:#ffb547;color:#131a24;font-weight:600}
+  .act.primary:hover{background:#ffc668;color:#131a24}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="nav">
+      <div class="brand"><span class="dot"></span>元素沙盒<span class="en">ELEMENT SANDBOX</span></div>
+      <div class="levels" id="levels"></div>
+      <div class="maps" id="maps">
+        <span class="maps-label">地图</span>
+      </div>
+      <div class="spacer"></div>
+      <label class="brush">笔刷
+        <input id="brush" type="range" min="1" max="24" value="5">
+        <output id="brushVal">5</output>
+      </label>
+      <button class="act on" id="sound">声音</button>
+      <button class="act" id="manualBtn">说明书</button>
+      <button class="act" id="pause">暂停</button>
+      <button class="act" id="clear">清空</button>
+      <button class="act" id="reset">重置</button>
+      <button class="act" id="save">保存</button>
+    </div>
+    <div class="toolbar">
+      <div class="tools" id="tools"></div>
+    </div>
+  </header>
+  <main>
+    <div class="levelbar" id="levelbar">
+      <div class="lb-title"><span id="lbIdx">第 1 关</span><b id="lbName"></b></div>
+      <div class="lb-desc" id="lbDesc"></div>
+      <div class="lb-bar"><i id="lbFill"></i></div>
+      <div class="lb-num" id="lbNum">0 / 0</div>
+    </div>
+    <div class="stage">
+      <canvas id="c" width="1200" height="720"></canvas>
+      <div class="win" id="win">
+        <div class="win-card">
+          <div class="glyph">✦</div>
+          <h2 id="winTitle">关卡完成</h2>
+          <p id="winSub"></p>
+          <div class="win-btns">
+            <button class="act" id="winRetry">再玩一次</button>
+            <button class="act primary" id="winNext">下一关</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="hint">按住拖动绘制 · <b>右键</b>擦除 · 数字键切换材料 · 空格暂停 · 装置会一直工作</div>
+  </main>
+</div>
+
+<div class="manual" id="manual">
+  <div class="manual-card">
+    <div class="manual-head">
+      <b>元素说明书</b>
+      <span>共 16 种材料与装置 · 按 ESC 或点击空白处关闭</span>
+      <button class="act" id="manualClose">关闭</button>
+    </div>
+    <div class="manual-body" id="manualBody"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ *  网格与材料定义
+ * ------------------------------------------------------------------ */
+
+var CELL = 4;                 // 每个格子 4 像素
+var W = 300, H = 180;         // 模拟分辨率 300 x 180
+var N = W * H;
+
+var EMPTY = 0, SAND = 1, WATER = 2, STONE = 3, WALL = 4, OIL = 5,
+    PLANT = 6, FIRE = 7, ACID = 8, LAVA = 9, ICE = 10, GUNPOWDER = 11,
+    STEAM = 12, SMOKE = 13;
+
+// 装置：会自己干活、永不静止的元件
+var SPRING = 14, VENT = 15, DRAIN = 16, STEAMER = 17;
+
+var COLORS = [];
+COLORS[EMPTY]     = [ 9,  12,  19];
+COLORS[SAND]      = [226, 190, 104];
+COLORS[WATER]     = [ 52, 104, 210];
+COLORS[STONE]     = [104, 112, 126];
+COLORS[WALL]      = [ 56,  64,  80];
+COLORS[OIL]       = [ 74,  54,  96];
+COLORS[PLANT]     = [ 68, 162,  92];
+COLORS[FIRE]      = [255, 150,  40];
+COLORS[ACID]      = [146, 232,  66];
+COLORS[LAVA]      = [255,  84,  30];
+COLORS[ICE]       = [148, 216, 238];
+COLORS[GUNPOWDER] = [138,  60,  52];
+COLORS[STEAM]     = [186, 212, 228];
+COLORS[SMOKE]     = [ 86,  90,  99];
+COLORS[SPRING]    = [ 78, 214, 255];
+COLORS[VENT]      = [255, 122,  42];
+COLORS[DRAIN]     = [124,  98, 255];
+COLORS[STEAMER]   = [140, 216, 200];
+
+var DENSITY = {};
+DENSITY[OIL]   = 600;
+DENSITY[WATER] = 1000;
+DENSITY[ACID]  = 1050;
+DENSITY[LAVA]  = 2200;
+
+var mat  = new Uint8Array(N);
+var life = new Uint8Array(N);
+var tint = new Int8Array(N);
+var moved = new Uint32Array(N);
+var frame = 0;
+
+for (var ti = 0; ti < N; ti++) tint[ti] = (Math.random() * 2 - 1) * 14;
+
+/* ------------------------------------------------------------------ *
+ *  工具函数
+ * ------------------------------------------------------------------ */
+
+function at(x, y) {
+  if (x < 0 || x >= W || y < 0 || y >= H) return WALL;
+  return mat[y * W + x];
+}
+
+function put(x, y, m, l) {
+  var i = y * W + x;
+  mat[i] = m;
+  life[i] = l ? l : 0;
+  moved[i] = frame;
+}
+
+function swapCells(i, j) {
+  var m = mat[i]; mat[i] = mat[j]; mat[j] = m;
+  var l = life[i]; life[i] = life[j]; life[j] = l;
+  moved[i] = frame;
+  moved[j] = frame;
+}
+
+function isGas(m) { return m === FIRE || m === SMOKE || m === STEAM; }
+function isLiquid(m) { return m === WATER || m === OIL || m === ACID || m === LAVA; }
+function isPowder(m) { return m === SAND || m === GUNPOWDER; }
+
+// m 想进入 m 所占据的目标格子
+function canDisplace(m, t) {
+  if (t === EMPTY) return true;
+  if (isGas(t)) return true;
+  if (isLiquid(t)) {
+    if (isPowder(m)) return true;
+    if (isLiquid(m)) return DENSITY[m] > DENSITY[t];
+    return false;
+  }
+  return false;
+}
+
+function hot(x, y) {
+  var m = at(x, y);
+  return m === FIRE || m === LAVA;
+}
+
+/* ------------------------------------------------------------------ *
+ *  爆炸
+ * ------------------------------------------------------------------ */
+
+function explode(cx, cy, r) {
+  SND.boom();
+  var r2 = r * r;
+  for (var dy = -r; dy <= r; dy++) {
+    var y = cy + dy;
+    if (y < 0 || y >= H) continue;
+    for (var dx = -r; dx <= r; dx++) {
+      var x = cx + dx;
+      if (x < 0 || x >= W) continue;
+      var d2 = dx * dx + dy * dy;
+      if (d2 > r2) continue;
+      var j = y * W + x;
+      if (mat[j] === WALL) continue;
+      if (d2 < r2 * 0.22) {
+        mat[j] = FIRE; life[j] = 70 + Math.random() * 60;
+      } else if (d2 < r2 * 0.62) {
+        if (Math.random() < 0.75) { mat[j] = FIRE; life[j] = 40 + Math.random() * 50; }
+        else { mat[j] = EMPTY; life[j] = 0; }
+      } else {
+        if (mat[j] !== EMPTY) {
+          if (Math.random() < 0.85) { mat[j] = Math.random() < 0.55 ? FIRE : EMPTY; life[j] = 35; }
+        }
+      }
+      moved[j] = frame;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  各材料的更新逻辑
+ * ------------------------------------------------------------------ */
+
+function powderStep(x, y, i, m) {
+  if (m === GUNPOWDER && (hot(x, y - 1) || hot(x, y + 1) || hot(x - 1, y) || hot(x + 1, y))) {
+    explode(x, y, 7);
+    return;
+  }
+  if (y + 1 >= H) return;
+  var below = i + W;
+  if (canDisplace(m, mat[below])) { swapCells(i, below); return; }
+
+  var d = Math.random() < 0.5 ? -1 : 1;
+  if (x + d >= 0 && x + d < W && canDisplace(m, mat[below + d])) { swapCells(i, below + d); return; }
+  if (x - d >= 0 && x - d < W && canDisplace(m, mat[below - d])) { swapCells(i, below - d); return; }
+}
+
+function liquidStep(x, y, i, m) {
+  // 熔岩遇水：凝固成石，水化为蒸汽
+  if (m === LAVA) {
+    if (at(x, y - 1) === WATER) { SND.sizzle(); put(x, y - 1, STEAM, 90); put(x, y, STONE, 0); return; }
+    if (at(x, y + 1) === WATER) { SND.sizzle(); put(x, y + 1, STEAM, 90); put(x, y, STONE, 0); return; }
+    if (at(x - 1, y) === WATER) { SND.sizzle(); put(x - 1, y, STEAM, 90); put(x, y, STONE, 0); return; }
+    if (at(x + 1, y) === WATER) { SND.sizzle(); put(x + 1, y, STEAM, 90); put(x, y, STONE, 0); return; }
+    if (Math.random() < 0.42) return;          // 熔岩流动很慢
+  }
+
+  // 酸液腐蚀
+  if (m === ACID) {
+    var targets = [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]];
+    for (var k = 0; k < 4; k++) {
+      var tx = targets[k][0], ty = targets[k][1];
+      if (tx < 0 || tx >= W || ty < 0 || ty >= H) continue;
+      var t = mat[ty * W + tx];
+      if (t === STONE || t === SAND || t === PLANT || t === GUNPOWDER || t === ICE) {
+        if (Math.random() < 0.3) {
+          mat[ty * W + tx] = EMPTY; life[ty * W + tx] = 0; moved[ty * W + tx] = frame;
+          if (Math.random() < 0.35) { mat[i] = EMPTY; life[i] = 0; moved[i] = frame; return; }
+        }
+        break;
+      }
+    }
+  }
+
+  // 下落
+  if (y + 1 < H) {
+    var below = i + W;
+    if (canDisplace(m, mat[below])) { swapCells(i, below); return; }
+    var d = Math.random() < 0.5 ? -1 : 1;
+    if (x + d >= 0 && x + d < W && canDisplace(m, mat[below + d])) { swapCells(i, below + d); return; }
+    if (x - d >= 0 && x - d < W && canDisplace(m, mat[below - d])) { swapCells(i, below - d); return; }
+  }
+
+  // 横向铺展
+  var disp = m === LAVA ? 1 : (m === OIL ? 2 : (m === ACID ? 2 : 3));
+  var dir = Math.random() < 0.5 ? -1 : 1;
+  var cx = x, ci = i;
+  for (var s = 0; s < disp; s++) {
+    var nx = cx + dir;
+    if (nx < 0 || nx >= W) break;
+    var j = y * W + nx;
+    if (!canDisplace(m, mat[j])) {
+      // 换个方向试一次
+      dir = -dir;
+      nx = cx + dir;
+      if (nx < 0 || nx >= W) break;
+      j = y * W + nx;
+      if (!canDisplace(m, mat[j])) break;
+    }
+    swapCells(ci, j);
+    ci = j; cx = nx;
+  }
+}
+
+function gasStep(x, y, i, m) {
+  var l = life[i];
+  if (l > 0) l--;
+  else { mat[i] = EMPTY; life[i] = 0; moved[i] = frame; return; }
+  life[i] = l;
+
+  // 先横向漂移：风对上升中的气体才会真正生效
+  var nx = x + windDir();
+  if (nx >= 0 && nx < W) {
+    var j = y * W + nx;
+    if (mat[j] === EMPTY && Math.random() < 0.45) { swapCells(i, j); return; }
+  }
+
+  if (y > 0 && mat[i - W] === EMPTY) { swapCells(i, i - W); return; }
+
+  if (y > 0) {
+    var nx2 = x + windDir();
+    if (nx2 >= 0 && nx2 < W) {
+      var j2 = (y - 1) * W + nx2;
+      if (mat[j2] === EMPTY) { swapCells(i, j2); return; }
+    }
+  }
+}
+
+function fireStep(x, y, i) {
+  var l = life[i];
+  var extinguished = false;
+
+  for (var k = 0; k < 4; k++) {
+    var nx = k === 0 ? x : k === 1 ? x : k === 2 ? x - 1 : x + 1;
+    var ny = k === 0 ? y - 1 : k === 1 ? y + 1 : y;
+    if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+    var j = ny * W + nx, t = mat[j];
+    if (t === OIL) { if (Math.random() < 0.38) put(nx, ny, FIRE, 50 + Math.random() * 60); }
+    else if (t === PLANT) { if (Math.random() < 0.42) put(nx, ny, FIRE, 40 + Math.random() * 50); }
+    else if (t === GUNPOWDER) { explode(nx, ny, 7); return; }
+    else if (t === WATER) { put(nx, ny, STEAM, 90); extinguished = true; }
+  }
+
+  if (extinguished && Math.random() < 0.75) { put(x, y, SMOKE, 60); return; }
+
+  if (l > 1) l--;
+  else { put(x, y, Math.random() < 0.4 ? SMOKE : EMPTY, 40); return; }
+  life[i] = l;
+
+  if (y > 0 && mat[i - W] === EMPTY && Math.random() < 0.5) { swapCells(i, i - W); return; }
+  var dx = windDir();
+  var nx2 = x + dx;
+  if (nx2 >= 0 && nx2 < W) {
+    var j2 = y * W + nx2;
+    if (mat[j2] === EMPTY && Math.random() < 0.5) { swapCells(i, j2); return; }
+  }
+}
+
+function plantStep(x, y, i) {
+  if (Math.random() > 0.008) return;
+  var plants = 0, waters = [];
+  var nb = [[x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]];
+  for (var k = 0; k < 4; k++) {
+    var nx = nb[k][0], ny = nb[k][1];
+    if (nx < 0 || nx >= W || ny < 0 || ny >= H) { plants++; continue; }
+    var j = ny * W + nx, t = mat[j];
+    if (t === PLANT) plants++;
+    else if (t === WATER) {
+      // 只往水面附近的水里长：水一旦被盖住就停止，池塘不会被啃光
+      if (ny > 0 && mat[j - W] === EMPTY) waters.push(j);
+    }
+  }
+  if (plants >= 4 || waters.length === 0) return;
+  var pick = waters[(Math.random() * waters.length) | 0];
+  mat[pick] = PLANT; life[pick] = 0; moved[pick] = frame;
+}
+
+function iceStep(x, y, i) {
+  if ((hot(x, y - 1) || hot(x, y + 1) || hot(x - 1, y) || hot(x + 1, y)) && Math.random() < 0.16) {
+    mat[i] = WATER; life[i] = 0; moved[i] = frame;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  装置：泉 / 熔岩口 / 排水口 / 蒸汽口
+ * ------------------------------------------------------------------ */
+
+var windX = 0;
+
+// 风的横向倾向：风越大，越倾向顺风飘
+function windDir() {
+  var r = Math.random();
+  if (windX > 0.12 && r < windX) return 1;
+  if (windX < -0.12 && r < -windX) return -1;
+  return Math.random() < 0.5 ? -1 : 1;
+}
+
+function deviceStep(x, y, i, m) {
+  if (life[i] > 0) { life[i]--; return; }
+
+  // 排水口：吞噬四周会流动的东西，石头和装置吃不动
+  if (m === DRAIN) {
+    life[i] = 3;
+    for (var k = 0; k < 4; k++) {
+      var nx = k === 0 ? x : k === 1 ? x : k === 2 ? x - 1 : x + 1;
+      var ny = k === 0 ? y - 1 : k === 1 ? y + 1 : y;
+      if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+      var j = ny * W + nx, t = mat[j];
+      if (t === EMPTY || t === STONE || t === WALL || t === PLANT ||
+          t === ICE || t >= SPRING) continue;
+      mat[j] = EMPTY; life[j] = 0; moved[j] = frame;
+    }
+    return;
+  }
+
+  // 泉 / 熔岩口 / 蒸汽口：往四周空格吐材料，优先往上
+  var out = m === SPRING ? WATER : (m === VENT ? LAVA : STEAM);
+  var cand = [[0, -1], [0, -1], [0, -1], [-1, 0], [1, 0], [0, 1]];
+  var cells = [];
+  for (var d = 0; d < cand.length; d++) {
+    var cx = x + cand[d][0], cy = y + cand[d][1];
+    if (cx < 0 || cx >= W || cy < 0 || cy >= H) continue;
+    var t2 = mat[cy * W + cx];
+    if (t2 === EMPTY || t2 === SMOKE || t2 === STEAM) cells.push(cy * W + cx);
+  }
+  if (cells.length) {
+    var pj = cells[(Math.random() * cells.length) | 0];
+    mat[pj] = out;
+    life[pj] = out === STEAM ? 130 : 0;
+    moved[pj] = frame;
+    life[i] = m === SPRING ? 3 : (m === VENT ? 26 : 1);
+  }
+  // 通道被堵住就保持待发状态，一有空隙立刻开喷
+}
+
+/* ------------------------------------------------------------------ *
+ *  主步进
+ * ------------------------------------------------------------------ */
+
+function step() {
+  frame++;
+  windX = 0.72 * Math.sin(frame * 0.0013) + 0.28 * Math.sin(frame * 0.0047 + 2);
+  var f = frame;
+  for (var y = H - 1; y >= 0; y--) {
+    var right = ((f + y) & 1) === 0;
+    for (var k = 0; k < W; k++) {
+      var x = right ? k : (W - 1 - k);
+      var i = y * W + x;
+      if (moved[i] === f) continue;
+      var m = mat[i];
+      if (m === EMPTY || m === STONE || m === WALL) continue;
+      switch (m) {
+        case SAND: case GUNPOWDER: powderStep(x, y, i, m); break;
+        case WATER: case OIL: case ACID: case LAVA: liquidStep(x, y, i, m); break;
+        case FIRE: fireStep(x, y, i); break;
+        case SMOKE: case STEAM: gasStep(x, y, i, m); break;
+        case PLANT: plantStep(x, y, i); break;
+        case ICE: iceStep(x, y, i); break;
+        case SPRING: case VENT: case DRAIN: case STEAMER: deviceStep(x, y, i, m); break;
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  渲染
+ * ------------------------------------------------------------------ */
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var simCanvas = document.createElement('canvas');
+simCanvas.width = W; simCanvas.height = H;
+var simCtx = simCanvas.getContext('2d');
+var imageData = simCtx.createImageData(W, H);
+var pixels = imageData.data;
+
+var devList = [];
+var fireCount = 0, steamCount = 0;
+
+function render() {
+  fireCount = 0; steamCount = 0;
+  var p = 0;
+  devList.length = 0;
+  for (var y = 0; y < H; y++) {
+    var ty = y / H;
+    var bgR = 14 - 5 * ty, bgG = 18 - 6 * ty, bgB = 27 - 9 * ty;
+    for (var x = 0; x < W; x++) {
+      var i = y * W + x;
+      var m = mat[i];
+      var t = tint[i];
+      var r, g, b;
+
+      if (m === EMPTY) {
+        r = bgR + t * 0.35; g = bgG + t * 0.35; b = bgB + t * 0.35;
+      } else if (m === WATER) {
+        // 越深越暗
+        var depth = 0;
+        for (var k = 1; k <= 6; k++) {
+          if (y - k < 0 || mat[i - k * W] !== WATER) break;
+          depth++;
+        }
+        var f = 1 - depth * 0.085;
+        r = 44 * f + 10 + t * 0.6;
+        g = 106 * f + 12 + t * 0.6;
+        b = 224 * f + 14 + t * 0.6;
+      } else if (m === FIRE) {
+        fireCount++;
+        var kk = life[i] / 70; if (kk > 1) kk = 1;
+        r = 255 - 30 * (1 - kk);
+        g = 70 + 168 * kk;
+        b = 22 + 78 * kk * kk;
+        r += t * 0.4; g += t * 0.4;
+      } else if (m === SMOKE || m === STEAM) {
+        if (m === STEAM) steamCount++;
+        var c0 = COLORS[m];
+        var a = life[i] / 90; if (a > 1) a = 1;
+        a = 0.4 + 0.6 * a;
+        r = bgR + (c0[0] - bgR) * a + t * 0.3;
+        g = bgG + (c0[1] - bgG) * a + t * 0.3;
+        b = bgB + (c0[2] - bgB) * a + t * 0.3;
+      } else if (m >= SPRING) {
+        // 装置：脉动的辉光，一眼看出它"活着"
+        var cd = COLORS[m];
+        var pulse = 0.62 + 0.38 * (0.5 + 0.5 * Math.sin(frame * 0.09 + (x + y) * 0.35));
+        r = cd[0] * pulse + t * 0.5;
+        g = cd[1] * pulse + t * 0.5;
+        b = cd[2] * pulse + t * 0.5;
+        devList.push(x, y, m);
+      } else {
+        var c = COLORS[m];
+        r = c[0] + t; g = c[1] + t; b = c[2] + t;
+      }
+
+      pixels[p] = r; pixels[p + 1] = g; pixels[p + 2] = b; pixels[p + 3] = 255;
+      p += 4;
+    }
+  }
+  simCtx.putImageData(imageData, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(simCanvas, 0, 0, W * CELL, H * CELL);
+
+  // 装置光圈：让"机器"在密集的像素里也能被看见
+  if (devList.length) {
+    ctx.save();
+    ctx.lineWidth = 1.4;
+    for (var dv = 0; dv < devList.length; dv += 3) {
+      var dxp = devList[dv] * CELL + CELL / 2;
+      var dyp = devList[dv + 1] * CELL + CELL / 2;
+      var dm = devList[dv + 2];
+      var dc = COLORS[dm];
+      ctx.beginPath();
+      ctx.arc(dxp, dyp, 4.5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(' + dc[0] + ',' + dc[1] + ',' + dc[2] + ',' +
+        (0.28 + 0.3 * (0.5 + 0.5 * Math.sin(frame * 0.1 + dv))) + ')';
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  if (hover.inside) {
+    ctx.beginPath();
+    ctx.arc(hover.x * CELL + CELL / 2, hover.y * CELL + CELL / 2, Math.max(3, brushSize * CELL), 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,.42)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(hover.x * CELL + CELL / 2, hover.y * CELL + CELL / 2, Math.max(3, brushSize * CELL) + 1.2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  绘制输入
+ * ------------------------------------------------------------------ */
+
+var brushMat = SAND;
+var brushSize = 5;
+var painting = false;
+var erasing = false;
+var lastX = null, lastY = null;
+var hover = { x: 0, y: 0, inside: false };
+
+function paintAt(cx, cy) {
+  var r = brushSize;
+  var r2 = r * r;
+  var inner = Math.max(0, r - 1.4);
+  var inner2 = inner * inner;
+  for (var dy = -r; dy <= r; dy++) {
+    var y = cy + dy;
+    if (y < 0 || y >= H) continue;
+    for (var dx = -r; dx <= r; dx++) {
+      var d2 = dx * dx + dy * dy;
+      if (d2 > r2) continue;
+      var x = cx + dx;
+      if (x < 0 || x >= W) continue;
+      var i = y * W + x;
+
+      if (erasing) {
+        mat[i] = EMPTY; life[i] = 0; moved[i] = frame;
+        continue;
+      }
+      if (mat[i] === WALL) continue;
+      if (d2 > inner2 && Math.random() < 0.62) continue;   // 边缘随机化，毛糙手感
+
+      var m = brushMat;
+      mat[i] = m;
+      life[i] = m === FIRE ? 60 + Math.random() * 70 : (m === STEAM ? 140 : 0);
+      moved[i] = frame;
+    }
+  }
+}
+
+function paintLine(x0, y0, x1, y1) {
+  var dx = x1 - x0, dy = y1 - y0;
+  var steps = Math.max(Math.abs(dx), Math.abs(dy));
+  if (steps === 0) { paintAt(x1, y1); return; }
+  steps = Math.min(steps, 400);
+  for (var s = 0; s <= steps; s++) {
+    var t = s / steps;
+    paintAt(Math.round(x0 + dx * t), Math.round(y0 + dy * t));
+  }
+}
+
+function toCell(e) {
+  var rect = canvas.getBoundingClientRect();
+  var x = Math.floor((e.clientX - rect.left) / rect.width * W);
+  var y = Math.floor((e.clientY - rect.top) / rect.height * H);
+  if (x < 0) x = 0; if (x >= W) x = W - 1;
+  if (y < 0) y = 0; if (y >= H) y = H - 1;
+  return [x, y];
+}
+
+canvas.addEventListener('pointerdown', function (e) {
+  e.preventDefault();
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 某些合成事件不支持 */ }
+  painting = true;
+  erasing = e.button === 2;
+  var c = toCell(e);
+  lastX = c[0]; lastY = c[1];
+  paintAt(c[0], c[1]);
+});
+
+canvas.addEventListener('pointermove', function (e) {
+  var rect = canvas.getBoundingClientRect();
+  var hx = Math.floor((e.clientX - rect.left) / rect.width * W);
+  var hy = Math.floor((e.clientY - rect.top) / rect.height * H);
+  hover.x = hx; hover.y = hy;
+  hover.inside = hx >= 0 && hx < W && hy >= 0 && hy < H;
+
+  if (!painting) return;
+  var c = toCell(e);
+  paintLine(lastX, lastY, c[0], c[1]);
+  lastX = c[0]; lastY = c[1];
+});
+
+function endPaint() { painting = false; erasing = false; lastX = lastY = null; }
+canvas.addEventListener('pointerup', endPaint);
+canvas.addEventListener('pointercancel', endPaint);
+canvas.addEventListener('pointerleave', function () { hover.inside = false; });
+canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+/* ------------------------------------------------------------------ *
+ *  初始场景
+ * ------------------------------------------------------------------ */
+
+function sceneValley() {
+  mat.fill(EMPTY); life.fill(0); moved.fill(0);
+  frame = 0;
+
+  function gTop(x) {
+    return Math.round(118 + 5 * Math.sin(x * 0.021) + 3 * Math.sin(x * 0.0085 + 2.2));
+  }
+
+  // 地面
+  for (var x = 0; x < W; x++) {
+    var gy = gTop(x);
+    for (var y = gy; y < H; y++) mat[y * W + x] = STONE;
+    // 表层两排沙土
+    for (var k = 0; k < 2; k++) {
+      if (gy + k < H) mat[(gy + k) * W + x] = SAND;
+    }
+  }
+
+  // 地层纹理（带横向扰动的沉积层）
+  for (var sx = 0; sx < W; sx++) {
+    var sgy = gTop(sx);
+    var warp = Math.sin(sx * 0.006) * 9 + Math.sin(sx * 0.021 + 1.3) * 4;
+    for (var sy = sgy; sy < H; sy++) {
+      var si = sy * W + sx;
+      var band = Math.sin(sy * 0.23 + warp) * 2.5;
+      var deep = Math.min(9, (sy - sgy) * 0.1);
+      tint[si] = Math.round(band - deep + (Math.random() * 2 - 1) * 6);
+    }
+  }
+
+  // 水塘
+  var cx = 96, cw = 44;
+  for (var x2 = cx - cw; x2 <= cx + cw; x2++) {
+    if (x2 < 0 || x2 >= W) continue;
+    var t = (x2 - cx) / cw;
+    var depth = Math.round(22 * Math.sqrt(Math.max(0, 1 - t * t)));
+    var gy2 = gTop(x2);
+    for (var y2 = gy2; y2 < gy2 + depth; y2++) {
+      if (y2 >= 0 && y2 < H) mat[y2 * W + x2] = EMPTY;
+    }
+  }
+  var WL = 122;
+  for (var x3 = cx - cw; x3 <= cx + cw; x3++) {
+    if (x3 < 0 || x3 >= W) continue;
+    for (var y3 = WL; y3 < H; y3++) {
+      var i3 = y3 * W + x3;
+      if (mat[i3] === EMPTY) mat[i3] = WATER;
+    }
+  }
+
+  // 水草
+  function stalk(px, h) {
+    var base = gTop(px) - 1;
+    for (var k = 0; k < h; k++) {
+      var y = base - k;
+      if (y < 0) break;
+      var bend = k > h * 0.55 ? 1 : 0;
+      var xx = px + bend;
+      if (xx >= 0 && xx < W) mat[y * W + xx] = PLANT;
+    }
+  }
+  stalk(44, 15); stalk(46, 10); stalk(148, 13); stalk(152, 8); stalk(28, 6);
+
+  // 沙丘
+  var dx0 = 230, dw = 56;
+  for (var x4 = dx0 - dw; x4 <= dx0 + dw; x4++) {
+    if (x4 < 0 || x4 >= W) continue;
+    var tt = (x4 - dx0) / dw;
+    var hh = Math.round(38 * Math.pow(Math.max(0, 1 - tt * tt), 0.72));
+    var gy4 = gTop(x4);
+    for (var y4 = gy4 - hh; y4 < gy4; y4++) {
+      if (y4 >= 0) mat[y4 * W + x4] = SAND;
+    }
+  }
+
+  // 几颗石头
+  var pebbles = [[14, 150, 4], [176, 156, 3], [252, 148, 5], [66, 168, 3]];
+  for (var p = 0; p < pebbles.length; p++) {
+    var pcx = pebbles[p][0], pcy = pebbles[p][1], pr = pebbles[p][2];
+    for (var dy5 = -pr; dy5 <= pr; dy5++) {
+      for (var dx5 = -pr; dx5 <= pr; dx5++) {
+        if (dx5 * dx5 + dy5 * dy5 > pr * pr) continue;
+        var px5 = pcx + dx5, py5 = pcy + dy5;
+        if (px5 >= 0 && px5 < W && py5 >= 0 && py5 < H) mat[py5 * W + px5] = STONE;
+      }
+    }
+  }
+
+  // ---- 会自己运转的部分 ----
+
+  // 石渠：泉水从高处流下，落进池塘
+  var aqY = gTop(148) - 9;
+  for (var ax = 128; ax <= 153; ax++) {
+    mat[aqY * W + ax] = STONE;                    // 渠底
+    mat[(aqY + 1) * W + ax] = STONE;
+    for (var ay2 = aqY - 3; ay2 < aqY; ay2++) mat[ay2 * W + ax] = EMPTY;
+  }
+  for (var wy = aqY - 4; wy < aqY; wy++) mat[wy * W + 153] = STONE;   // 右壁挡水
+  for (var py = aqY + 1; py < gTop(150); py++) {
+    mat[py * W + 149] = STONE;                    // 支柱
+    mat[py * W + 150] = STONE;
+    mat[py * W + 151] = STONE;
+  }
+  for (var spx = 144; spx <= 152; spx += 2) mat[(aqY - 1) * W + spx] = SPRING;
+
+  // 排水口：水位涨到它高度就被吞掉，于是池塘永远保持同一个水位
+  for (var drx = 98; drx <= 102; drx++) { mat[121 * W + drx] = DRAIN; mat[122 * W + drx] = DRAIN; }
+
+  // 蒸汽口：地面上的小喷气孔
+  mat[(gTop(38) - 1) * W + 38] = STEAMER;
+
+  // 岸边一枚冰晶
+  var icx = 26, icy = gTop(26) - 6, ir = 6;
+  for (var iy = -ir; iy <= ir; iy++) {
+    for (var ix = -ir; ix <= ir; ix++) {
+      if (Math.abs(ix) + Math.abs(iy) > ir) continue;
+      var ipx = icx + ix, ipy = icy + iy;
+      if (ipx >= 0 && ipx < W && ipy >= 0 && ipy < H) mat[ipy * W + ipx] = ICE;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  自由模式的其他地图
+ * ------------------------------------------------------------------ */
+
+function sceneIce() {
+  mat.fill(EMPTY); life.fill(0); moved.fill(0);
+  frame = 0;
+  for (var t0 = 0; t0 < N; t0++) tint[t0] = (Math.random() * 2 - 1) * 14;
+
+  function gTop(x) {
+    return Math.round(124 + 4 * Math.sin(x * 0.017) + 3 * Math.sin(x * 0.009 + 0.7));
+  }
+
+  // 冻土：石头地表盖一层冰壳
+  for (var x = 0; x < W; x++) {
+    var gy = gTop(x);
+    for (var y = gy; y < H; y++) mat[y * W + x] = STONE;
+    for (var k = 0; k < 3; k++) if (gy + k < H) mat[(gy + k) * W + x] = ICE;
+  }
+
+  // 冰湖：挖坑 → 注水 → 水面结一层冰
+  bowl(175, 62, 26, 126);
+  for (var x3 = 113; x3 <= 237; x3++)
+    for (var y3 = 126; y3 < H; y3++)
+      if (mat[y3 * W + x3] === EMPTY) mat[y3 * W + x3] = WATER;
+  for (var x4 = 113; x4 <= 237; x4++)
+    for (var k4 = 0; k4 < 2; k4++) {
+      var y4 = 126 + k4;
+      if (mat[y4 * W + x4] === WATER) mat[y4 * W + x4] = ICE;
+    }
+
+  // 左侧冰川：三级台阶，越靠湖越低
+  var tiers = [[0, 30, 56], [30, 68, 70], [68, 112, 84]];
+  for (var ti2 = 0; ti2 < tiers.length; ti2++) {
+    for (var x2 = tiers[ti2][0]; x2 <= tiers[ti2][1]; x2++) {
+      var top2 = tiers[ti2][2] + Math.round(3 * Math.sin(x2 * 0.3));
+      for (var y2 = top2; y2 < 124; y2++) mat[y2 * W + x2] = ICE;
+    }
+  }
+
+  // 冰川顶上的泉：水从 40 格高处落进冰湖
+  for (var sx = 104; sx <= 110; sx += 3) {
+    for (var sy2 = 0; sy2 < H; sy2++) {
+      if (mat[sy2 * W + sx] !== EMPTY) {
+        if (sy2 > 0) mat[(sy2 - 1) * W + sx] = SPRING;
+        break;
+      }
+    }
+  }
+
+  // 冰盖上的排水口：融水从这里漏走，湖面不会被灌满
+  // 落点处的冰洞：瀑布直接灌进排水口，融水不会淹掉冰面
+  for (var dcx = 113; dcx <= 121; dcx += 2)
+    for (var dcy = 126; dcy <= 127; dcy++)
+      mat[dcy * W + dcx] = DRAIN;
+
+  // 岸边的冰笋
+  var spires = [[250, 8, 5], [266, 12, 6], [282, 6, 4], [58, 5, 4]];
+  for (var sp = 0; sp < spires.length; sp++) {
+    var pcx = spires[sp][0], ph = spires[sp][1], pr = spires[sp][2];
+    var pbase = gTop(pcx) - 1;
+    for (var py = 0; py < ph; py++) {
+      var w2 = Math.max(1, pr - Math.floor(py / 2));
+      for (var px = -w2; px <= w2; px++) {
+        var ppy = pbase - py;
+        if (ppy >= 0 && ppy < H) mat[ppy * W + pcx + px] = ICE;
+      }
+    }
+  }
+
+  // 地热喷气孔
+  mat[(gTop(30) - 1) * W + 30] = STEAMER;
+  mat[(gTop(240) - 1) * W + 240] = STEAMER;
+}
+
+function sceneVolcano() {
+  mat.fill(EMPTY); life.fill(0); moved.fill(0);
+  frame = 0;
+  for (var t1 = 0; t1 < N; t1++) tint[t1] = (Math.random() * 2 - 1) * 14;
+
+  function gTop(x) { return Math.round(130 + 2 * Math.sin(x * 0.02)); }
+
+  // 玄武岩地面
+  for (var x = 0; x < W; x++) {
+    var gy = gTop(x);
+    for (var y = gy; y < H; y++) mat[y * W + x] = STONE;
+    mat[gy * W + x] = WALL;
+  }
+
+  // 火山口
+  bowl(150, 62, 42, 120);
+  for (var x2 = 88; x2 <= 212; x2++)
+    for (var y2 = 136; y2 < H; y2++)
+      if (mat[y2 * W + x2] === EMPTY) mat[y2 * W + x2] = LAVA;
+
+  // 熔岩口埋在熔岩里是喷不出来的，所以这里只留静态熔岩池；
+  // 想让火山活起来，自己往口沿上放泉眼/熔岩口，后果自负。
+
+
+  // 火山灰丘
+  var dunes = [[34, 7, 16], [262, 9, 18], [24, 5, 10]];
+  for (var d = 0; d < dunes.length; d++) {
+    var dcx = dunes[d][0], dw = dunes[d][1], dh = dunes[d][2];
+    for (var ddx = -dw; ddx <= dw; ddx++) {
+      var tt = ddx / dw;
+      var hh = Math.round(dh * Math.pow(Math.max(0, 1 - tt * tt), 0.7));
+      var dgy = gTop(dcx + ddx);
+      for (var ddy = 0; ddy < hh; ddy++) {
+        var yy2 = dgy - 1 - ddy;
+        if (yy2 >= 0 && yy2 < H) mat[yy2 * W + dcx + ddx] = SAND;
+      }
+    }
+  }
+
+  // 玄武岩柱
+  for (var c = 0; c < 4; c++) {
+    var cxx = 232 + c * 7;
+    var ch = 10 + ((c * 5) % 9);
+    for (var cy = 0; cy < ch; cy++)
+      for (var cw = 0; cw < 3; cw++) {
+        var cyy = gTop(cxx) - 1 - cy;
+        if (cyy >= 0) mat[cyy * W + cxx + cw] = WALL;
+      }
+  }
+
+  // 喷气孔
+  mat[(gTop(76) - 1) * W + 76] = STEAMER;
+  mat[(gTop(222) - 1) * W + 222] = STEAMER;
+}
+
+var MAPS = [
+  { name: '溪谷', setup: sceneValley },
+  { name: '冰湖', setup: sceneIce },
+  { name: '火山', setup: sceneVolcano }
+];
+
+var curMap = 0;
+
+/* ------------------------------------------------------------------ *
+ *  关卡工具
+ * ------------------------------------------------------------------ */
+
+function fillRect(x0, y0, x1, y1, m) {
+  if (x0 > x1) { var tx = x0; x0 = x1; x1 = tx; }
+  if (y0 > y1) { var ty = y0; y0 = y1; y1 = ty; }
+  for (var y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++)
+    for (var x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++)
+      mat[y * W + x] = m;
+}
+
+function countAll(m) {
+  var c = 0;
+  for (var i = 0; i < N; i++) if (mat[i] === m) c++;
+  return c;
+}
+
+function countIn(m, x0, y0, x1, y1) {
+  var c = 0;
+  for (var y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++)
+    for (var x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++)
+      if (mat[y * W + x] === m) c++;
+  return c;
+}
+
+// 平坦地面：表土 + 岩石
+function flatGround(top) {
+  for (var x = 0; x < W; x++) {
+    for (var y = top; y < H; y++) mat[y * W + x] = STONE;
+    mat[top * W + x] = SAND;
+  }
+}
+
+// 在平地上挖一个碗形坑
+function bowl(cx, halfW, depth, top) {
+  for (var x = cx - halfW; x <= cx + halfW; x++) {
+    if (x < 0 || x >= W) continue;
+    var t = (x - cx) / halfW;
+    var d = Math.round(depth * Math.sqrt(Math.max(0, 1 - t * t)));
+    for (var y = top; y < top + d; y++) {
+      if (y >= 0 && y < H) mat[y * W + x] = EMPTY;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  关卡定义
+ * ------------------------------------------------------------------ */
+
+var LEVELS = [
+
+  // 1 ── 火
+  {
+    name: '火烧连营',
+    desc: '点一把火，把整片林子烧成灰。',
+    palette: [FIRE, OIL],
+    start: FIRE,
+    setup: function () {
+      flatGround(148);
+      // 灌木层：把所有树连成一片，火才能一路烧过去
+      for (var x = 56; x <= 244; x++)
+        for (var y = 138; y < 148; y++) mat[y * W + x] = PLANT;
+      // 一棵棵的树
+      for (var tx = 60; tx <= 240; tx += 9) {
+        var h = 36 + Math.round(12 * Math.sin(tx * 0.09) + 8 * Math.sin(tx * 0.031 + 1.1));
+        var r = 10 + Math.round(2 * Math.sin(tx * 0.17));
+        var topY = 148 - h;
+        for (var dy = -r; dy <= r; dy++) {
+          for (var dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy > r * r) continue;
+            var px = tx + dx, py = topY + dy;
+            if (px >= 0 && px < W && py >= 0 && py < 148) mat[py * W + px] = PLANT;
+          }
+        }
+        for (var ty = topY; ty < 148; ty++) {
+          for (var dx2 = -2; dx2 <= 2; dx2++) {
+            var px2 = tx + dx2;
+            if (px2 >= 0 && px2 < W) mat[ty * W + px2] = PLANT;
+          }
+        }
+      }
+      this.total = countAll(PLANT);
+    },
+    goal: function () {
+      var left = countAll(PLANT);
+      return { cur: this.total - left, max: this.total, text: '剩余植物 ' + left };
+    }
+  },
+
+  // 2 ── 水 + 挖掘
+  {
+    name: '引水入田',
+    desc: '池塘高、田地低。挖一条水道，把水引过去。',
+    palette: [EMPTY, SAND, WALL],
+    start: EMPTY,
+    setup: function () {
+      flatGround(134);
+      bowl(51, 37, 24, 134);
+      for (var x = 14; x <= 88; x++)
+        for (var y = 136; y < H; y++)
+          if (mat[y * W + x] === EMPTY) mat[y * W + x] = WATER;
+      // 田：一块挖空的洼地，边缘就是地层
+      for (var x2 = 112; x2 <= 218; x2++) {
+        for (var y2 = 134; y2 <= 155; y2++) mat[y2 * W + x2] = EMPTY;
+        for (var y3 = 152; y3 <= 155; y3++) mat[y3 * W + x2] = SAND;
+      }
+    },
+    goal: function () {
+      var w = countIn(WATER, 112, 128, 218, 157);
+      return { cur: w, max: 150, text: '田地积水 ' + w + ' / 150' };
+    }
+  },
+
+  // 3 ── 沙：密度
+  {
+    name: '沙沉湖底',
+    desc: '沙子比水重，会一路沉到底。把湖底垫起来。',
+    palette: [SAND, WALL],
+    start: SAND,
+    setup: function () {
+      flatGround(140);
+      bowl(150, 96, 28, 140);
+      for (var x = 54; x <= 246; x++)
+        for (var y = 140; y < H; y++)
+          if (mat[y * W + x] === EMPTY) mat[y * W + x] = WATER;
+    },
+    goal: function () {
+      var s = countIn(SAND, 56, 146, 244, 179);
+      return { cur: s, max: 400, text: '湖底积沙 ' + s + ' / 400' };
+    }
+  },
+
+  // 4 ── 火药：爆炸
+  {
+    name: '爆破拆除',
+    desc: '这座石桥太碍事了。用火药把它炸开。',
+    palette: [GUNPOWDER, FIRE, WALL],
+    start: GUNPOWDER,
+    setup: function () {
+      flatGround(152);
+      fillRect(86, 108, 102, 151, STONE);    // 左桥墩
+      fillRect(198, 108, 214, 151, STONE);   // 右桥墩
+      fillRect(66, 94, 234, 109, STONE);     // 桥面
+      this.total = countIn(STONE, 66, 94, 234, 109);
+    },
+    goal: function () {
+      var left = countIn(STONE, 66, 94, 234, 109);
+      return { cur: this.total - left, max: this.total - 60, text: '桥面剩余 ' + left + ' / ' + this.total };
+    }
+  },
+
+  // 5 ── 酸：密度 + 腐蚀
+  {
+    name: '酸蚀通路',
+    desc: '酸比水重，会一路沉到池底。蚀穿石板，把水放下去。',
+    palette: [ACID, WATER, WALL],
+    start: ACID,
+    setup: function () {
+      flatGround(152);
+      fillRect(20, 112, 280, 124, STONE);    // 石板
+      fillRect(20, 124, 36, 151, STONE);     // 两端支柱
+      fillRect(264, 124, 280, 151, STONE);
+      fillRect(48, 96, 48, 111, WALL);       // 池壁
+      fillRect(124, 96, 124, 111, WALL);
+      fillRect(49, 97, 123, 111, WATER);     // 池水
+      fillRect(58, 126, 114, 157, EMPTY);    // 下方集水坑
+    },
+    goal: function () {
+      var w = countIn(WATER, 58, 126, 114, 157);
+      return { cur: w, max: 100, text: '坑中积水 ' + w + ' / 100' };
+    }
+  },
+
+  // 6 ── 熔岩 + 水：相变
+  {
+    name: '石桥横跨',
+    desc: '水浇在熔岩上会立刻凝成石头。在峡谷上架一座石桥。',
+    palette: [WATER, ICE, WALL],
+    start: WATER,
+    setup: function () {
+      flatGround(140);
+      fillRect(130, 140, 170, 179, EMPTY);   // 峡谷
+      fillRect(130, 152, 170, 179, LAVA);    // 谷底熔岩
+    },
+    goal: function () {
+      var cols = 0, total = 0;
+      for (var x = 132; x <= 168; x++) {
+        total++;
+        for (var y = 148; y <= 158; y++) {
+          if (mat[y * W + x] === STONE) { cols++; break; }
+        }
+      }
+      return { cur: cols, max: total, text: '桥面连通 ' + cols + ' / ' + total + ' 段' };
+    }
+  }
+];
+
+var PALETTE_ALL = [EMPTY, SAND, WATER, STONE, WALL, OIL, PLANT, FIRE, ACID, LAVA, ICE, GUNPOWDER,
+                   SPRING, VENT, DRAIN, STEAMER];
+
+/* ------------------------------------------------------------------ *
+ *  音效：全部用 Web Audio 实时合成，不加载任何音频文件
+ * ------------------------------------------------------------------ */
+
+var SND = {
+  on: true,
+  ctx: null,
+  master: null,
+  fireGain: null,
+  hissGain: null,
+  noise: null,
+  lastBoom: 0,
+  lastSizzle: 0,
+
+  boot: function () {
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return;
+    }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    var ctx = this.ctx = new AC();
+    var master = this.master = ctx.createGain();
+    master.gain.value = this.on ? 0.85 : 0;
+    master.connect(ctx.destination);
+
+    // 两秒白噪声，所有声音都从它滤出来
+    var len = Math.floor(ctx.sampleRate * 2);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    this.noise = buf;
+
+    this.fireGain = this._loop('lowpass', 620, 0.7);
+    this.hissGain = this._loop('highpass', 3000, 0.8);
+    if (ctx.state === 'suspended') ctx.resume();
+  },
+
+  _loop: function (type, freq, q) {
+    var ctx = this.ctx;
+    var src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    var f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    f.Q.value = q;
+    var g = ctx.createGain();
+    g.gain.value = 0;
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start();
+    return g;
+  },
+
+  toggle: function () {
+    this.on = !this.on;
+    this.boot();
+    if (this.master) {
+      var t = this.ctx.currentTime;
+      this.master.gain.cancelScheduledValues(t);
+      this.master.gain.setTargetAtTime(this.on ? 0.85 : 0, t, 0.04);
+    }
+    return this.on;
+  },
+
+  // 火焰轰鸣 + 蒸汽嘶声，音量跟着画面上有多少决定
+  update: function (fireN, steamN) {
+    if (!this.ctx) return;
+    var t = this.ctx.currentTime;
+    this.fireGain.gain.setTargetAtTime(Math.min(0.16, fireN * 0.0014), t, 0.2);
+    this.hissGain.gain.setTargetAtTime(Math.min(0.06, steamN * 0.0010), t, 0.25);
+  },
+
+  boom: function () {
+    if (!this.ctx || !this.on) return;
+    var ctx = this.ctx, t = ctx.currentTime;
+    if (t - this.lastBoom < 0.045) return;
+    this.lastBoom = t;
+
+    var o = ctx.createOscillator();
+    var og = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(125 + Math.random() * 35, t);
+    o.frequency.exponentialRampToValueAtTime(36, t + 0.38);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.5, t + 0.012);
+    og.gain.exponentialRampToValueAtTime(0.0008, t + 0.5);
+    o.connect(og); og.connect(this.master);
+    o.start(t); o.stop(t + 0.55);
+
+    var s = ctx.createBufferSource();
+    s.buffer = this.noise;
+    s.playbackRate.value = 0.7 + Math.random() * 0.4;
+    var lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1800, t);
+    lp.frequency.exponentialRampToValueAtTime(220, t + 0.35);
+    var ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.3, t);
+    ng.gain.exponentialRampToValueAtTime(0.0008, t + 0.4);
+    s.connect(lp); lp.connect(ng); ng.connect(this.master);
+    s.start(t); s.stop(t + 0.45);
+  },
+
+  // 水泼在熔岩上的“嗤”
+  sizzle: function () {
+    if (!this.ctx || !this.on) return;
+    var ctx = this.ctx, t = ctx.currentTime;
+    if (t - this.lastSizzle < 0.06) return;
+    this.lastSizzle = t;
+    var s = ctx.createBufferSource();
+    s.buffer = this.noise;
+    s.playbackRate.value = 1.4 + Math.random() * 0.6;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2400 + Math.random() * 1400;
+    bp.Q.value = 1.1;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.085, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + 0.26);
+    s.connect(bp); bp.connect(g); g.connect(this.master);
+    s.start(t); s.stop(t + 0.3);
+  }
+};
+
+/* ------------------------------------------------------------------ *
+ *  UI
+ * ------------------------------------------------------------------ */
+
+var MATS = [
+  { id: EMPTY,     name: '橡皮', en: 'ERASE',  color: '#3f4859', key: 'e' },
+  { id: SAND,      name: '沙',   en: 'SAND',   color: '#e2be68', key: '1' },
+  { id: WATER,     name: '水',   en: 'WATER',  color: '#3468d2', key: '2' },
+  { id: STONE,     name: '石',   en: 'STONE',  color: '#68707e', key: '3' },
+  { id: WALL,      name: '墙',   en: 'WALL',   color: '#384050', key: '4' },
+  { id: OIL,       name: '油',   en: 'OIL',    color: '#4a3660', key: '5' },
+  { id: PLANT,     name: '植物', en: 'PLANT',  color: '#44a25c', key: '6' },
+  { id: FIRE,      name: '火',   en: 'FIRE',   color: '#ff9628', key: '7' },
+  { id: ACID,      name: '酸',   en: 'ACID',   color: '#92e842', key: '8' },
+  { id: LAVA,      name: '熔岩', en: 'LAVA',   color: '#ff541e', key: '9' },
+  { id: ICE,       name: '冰',   en: 'ICE',    color: '#94d8ee', key: '0' },
+  { id: GUNPOWDER, name: '火药', en: 'POWDER', color: '#8a3c34', key: 'g' },
+  { id: SPRING,    name: '泉',   en: 'SPRING', color: '#4ed6ff', key: 'q', dev: true,
+    desc: '泉：不停地涌出水' },
+  { id: VENT,      name: '熔岩口', en: 'VENT', color: '#ff7a2a', key: 'w', dev: true,
+    desc: '熔岩口：不停地喷出熔岩' },
+  { id: DRAIN,     name: '排水口', en: 'DRAIN', color: '#7c62ff', key: 'r', dev: true,
+    desc: '排水口：吞掉流进来的东西（石头和装置吃不动）' },
+  { id: STEAMER,   name: '蒸汽口', en: 'STEAM', color: '#8cd8c8', key: 't', dev: true,
+    desc: '蒸汽口：冒蒸汽，会跟着风飘' }
+];
+
+var MAT_INFO = {};
+for (var mi = 0; mi < MATS.length; mi++) MAT_INFO[MATS[mi].id] = MATS[mi];
+
+var toolsEl = document.getElementById('tools');
+var levelsEl = document.getElementById('levels');
+var toolButtons = {};
+var availKeys = {};
+
+function buildTools(palette) {
+  toolsEl.innerHTML = '';
+  toolButtons = {};
+  availKeys = {};
+  var sawDev = false;
+  palette.forEach(function (id) {
+    var t = MAT_INFO[id];
+    if (t.dev && !sawDev) {
+      var sep = document.createElement('span');
+      sep.className = 'tb-sep';
+      sep.textContent = '装置';
+      toolsEl.appendChild(sep);
+    }
+    if (t.dev) sawDev = true;
+    var b = document.createElement('button');
+    b.className = 'tool';
+    b.style.setProperty('--c', t.color);
+    b.title = t.desc || t.en;
+    var sw = document.createElement('span');
+    sw.className = 'sw';
+    sw.style.background = t.color;
+    var nm = document.createElement('span');
+    nm.textContent = t.name;
+    var kb = document.createElement('kbd');
+    kb.textContent = t.key.toUpperCase();
+    b.appendChild(sw); b.appendChild(nm); b.appendChild(kb);
+    b.addEventListener('click', function () { selectMat(id); });
+    toolsEl.appendChild(b);
+    toolButtons[id] = b;
+    availKeys[t.key] = id;
+  });
+}
+
+function selectMat(id) {
+  brushMat = id;
+  for (var k in toolButtons) {
+    if (Object.prototype.hasOwnProperty.call(toolButtons, k)) {
+      toolButtons[k].classList.toggle('active', Number(k) === id);
+    }
+  }
+}
+
+/* ---------------- 关卡状态与 HUD ---------------- */
+
+var curLevel = -1;
+var won = false;
+var done = {};
+var tick = 0;
+
+try {
+  var savedDone = localStorage.getItem('sb-levels-done');
+  if (savedDone) done = JSON.parse(savedDone) || {};
+} catch (err) { done = {}; }
+
+function persistDone() {
+  try { localStorage.setItem('sb-levels-done', JSON.stringify(done)); } catch (err) {}
+}
+
+var mapsEl = document.getElementById('maps');
+var manualBtn = document.getElementById('manualBtn');
+var lbEl = document.getElementById('levelbar');
+var lbIdxEl = document.getElementById('lbIdx');
+var lbNameEl = document.getElementById('lbName');
+var lbDescEl = document.getElementById('lbDesc');
+var lbFillEl = document.getElementById('lbFill');
+var lbNumEl = document.getElementById('lbNum');
+var winEl = document.getElementById('win');
+var winTitleEl = document.getElementById('winTitle');
+var winSubEl = document.getElementById('winSub');
+var winNextEl = document.getElementById('winNext');
+var clearEl = document.getElementById('clear');
+var resetEl = document.getElementById('reset');
+
+function buildChips() {
+  levelsEl.innerHTML = '';
+  function mk(label, idx, title) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = label;
+    b.title = title;
+    b.setAttribute('data-idx', String(idx));
+    b.addEventListener('click', function () { loadLevel(idx); });
+    levelsEl.appendChild(b);
+  }
+  mk('自由', -1, '自由创造模式');
+  for (var i = 0; i < LEVELS.length; i++) {
+    mk(String(i + 1), i, '第 ' + (i + 1) + ' 关 · ' + LEVELS[i].name);
+  }
+}
+
+function syncChips() {
+  var nodes = levelsEl.children;
+  for (var i = 0; i < nodes.length; i++) {
+    var idx = Number(nodes[i].getAttribute('data-idx'));
+    nodes[i].classList.toggle('on', idx === curLevel);
+    nodes[i].classList.toggle('done', idx >= 0 && !!done[idx]);
+  }
+}
+
+function buildMaps() {
+  for (var i = 0; i < MAPS.length; i++) {
+    var b = document.createElement('button');
+    b.className = 'map-chip';
+    b.textContent = MAPS[i].name;
+    b.title = '切换到「' + MAPS[i].name + '」';
+    (function (idx) {
+      b.addEventListener('click', function () { setMap(idx); });
+    })(i);
+    mapsEl.appendChild(b);
+  }
+  syncMaps();
+}
+
+function syncMaps() {
+  var nodes = mapsEl.querySelectorAll('.map-chip');
+  for (var i = 0; i < nodes.length; i++) nodes[i].classList.toggle('on', i === curMap);
+}
+
+function setMap(i) {
+  if (i < 0 || i >= MAPS.length) return;
+  curMap = i;
+  if (curLevel < 0) loadLevel(-1);
+  else syncMaps();
+}
+
+/* ---------------- 说明书 ---------------- */
+
+var ENTRIES = {};
+ENTRIES[EMPTY] = { s: '空', d: '', w: '不参与任何模拟，只是背景。', h: '材料被删除、水被蒸发、火熄灭之后都会变回它。' };
+ENTRIES[SAND] = { s: '粉末', d: '密度 900', w: '竖直下落，被挡住就试着滑向左右斜下方，最终堆成约 45° 的锥形。', h: '比水重，会一路沉到水底并堆起来；被酸溶解；被爆炸掀飞。' };
+ENTRIES[WATER] = { s: '液体', d: '密度 1000', w: '先下落，落不下去就沿水平方向铺开，每帧最多横移 3 格。', h: '把油托在上面；遇到火会变成蒸汽并把火浇灭；遇到熔岩立刻变蒸汽、熔岩变石头；被排水口吞掉。' };
+ENTRIES[STONE] = { s: '固体', d: '', w: '完全静止，是地图的地形骨架。', h: '会被酸一格格蚀穿；会被爆炸炸掉；水、沙、火都穿不过去。' };
+ENTRIES[WALL] = { s: '固体', d: '', w: '完全静止。', h: '不可摧毁——酸蚀不动、爆炸炸不掉。适合做容器、水坝和承重结构。' };
+ENTRIES[OIL] = { s: '液体', d: '密度 600', w: '流动范围比水小，每帧最多横移 2 格。', h: '比水轻，永远浮在水面上；极易燃，火会顺着油面快速蔓延。' };
+ENTRIES[PLANT] = { s: '固体', d: '', w: '静止不动。挨着水面的植物每帧有 0.8% 概率往水里长一格。', h: '极易燃；只能占领水面那一层，水被盖住后就停止蔓延。' };
+ENTRIES[FIRE] = { s: '气体', d: '寿命 40~110 帧', w: '每帧 50% 概率向上升，否则横向飘。', h: '点燃油、植物、火药；碰到水会熄灭并冒出蒸汽；烧完留下烟。' };
+ENTRIES[ACID] = { s: '液体', d: '密度 1050', w: '比水重，会沉到水底；每帧 30% 概率溶解相邻的石头、沙、植物、火药、冰。', h: '溶解时有 35% 概率消耗掉自己；对墙和装置无效。' };
+ENTRIES[LAVA] = { s: '液体', d: '密度 2200', w: '每帧有 42% 概率干脆不动，横移最多 1 格，所以流得极慢。', h: '点燃油和植物、引爆火药、融化冰；一碰到水就凝固成石头并冒出蒸汽。' };
+ENTRIES[ICE] = { s: '固体', d: '', w: '完全静止。', h: '紧挨着火或熔岩时，每帧 16% 概率融化成水。' };
+ENTRIES[GUNPOWDER] = { s: '粉末', d: '密度 800', w: '和沙一样下落堆积。', h: '接触到火或熔岩立刻爆炸，冲击半径 7 格；会引爆附近的火药，形成连锁。' };
+ENTRIES[STEAM] = { s: '气体', d: '寿命约 2 秒', w: '先随风横移，再向上飘。', h: '不点燃任何东西，结束时直接消失。' };
+ENTRIES[SMOKE] = { s: '气体', d: '寿命约 1 秒', w: '和蒸汽一样飘，但更短命。', h: '无。纯粹是视觉。' };
+ENTRIES[SPRING] = { s: '装置', d: '每 4 帧 1 格', w: '往相邻空格吐水，优先朝上。', h: '通道被堵住就攒着，一有空隙立刻喷；可以被炸掉。' };
+ENTRIES[VENT] = { s: '装置', d: '每 27 帧 1 格', w: '往相邻空格吐熔岩，同样优先朝上。', h: '灌满容器后会自己停下；可以和排水口组成永不冷却的熔岩河。' };
+ENTRIES[DRAIN] = { s: '装置', d: '每 4 帧清一圈', w: '吞掉四周所有可流动的材料。', h: '吃水、油、酸、熔岩、沙、火药、火和气体；吃不掉石头、墙、植物、冰和其它装置。' };
+ENTRIES[STEAMER] = { s: '装置', d: '每 2 帧 1 格', w: '往相邻空格吐蒸汽。', h: '蒸汽会被全场风场吹斜，所以烟柱会随着风摆。' };
+
+var manualEl = document.getElementById('manual');
+var manualBody = document.getElementById('manualBody');
+var manualBuilt = false;
+
+function buildManual() {
+  if (manualBuilt) return;
+  manualBuilt = true;
+  var h = '';
+  h += '<div class="man-rules"><b>全局规则</b><ul>' +
+    '<li>模拟固定 <code>60 帧 / 秒</code>，每个格子每帧更新一次，从下往上扫。</li>' +
+    '<li>密度顺序：<code>油 600 &lt; 水 1000 &lt; 酸 1050 &lt; 熔岩 2200</code>。粉末（沙 900、火药 800）会沉进任何液体里。</li>' +
+    '<li>所有「燃烧」都是把邻居格子变成火，所以没有可燃物就烧不起来，火自己会灭。</li>' +
+    '<li>全场共用一个风向，约 80 秒转一圈，只影响气体和火焰——烟、蒸汽、火苗会顺着风歪。</li>' +
+    '<li>装置不吃不掉、也不消耗，放下去就一直工作。</li>' +
+    '</ul></div>';
+  h += '<div class="man-grid">';
+  for (var i = 0; i < MATS.length; i++) {
+    var t = MATS[i], e = ENTRIES[t.id];
+    if (!e) continue;
+    h += '<div class="ent">' +
+      '<div class="ent-h"><span class="sw" style="background:' + t.color + '"></span><b>' + t.name + '</b>' +
+      '<i>' + e.s + (e.d ? ' · ' + e.d : '') + '</i></div>' +
+      '<p class="hot"><em>个体</em>' + e.w + '</p>' +
+      '<p><em>交互</em>' + e.h + '</p>' +
+      '</div>';
+  }
+  h += '</div>';
+  manualBody.innerHTML = h;
+}
+
+function openManual() { buildManual(); manualEl.classList.add('on'); }
+function closeManual() { manualEl.classList.remove('on'); }
+
+function applyBar(g) {
+  var p = g.max > 0 ? g.cur / g.max : 0;
+  if (p > 1) p = 1;
+  if (p < 0) p = 0;
+  lbFillEl.style.width = (p * 100).toFixed(1) + '%';
+  lbNumEl.textContent = g.text;
+}
+
+function updateHud() {
+  var lvl = curLevel >= 0 ? LEVELS[curLevel] : null;
+  if (!lvl) { lbEl.classList.remove('on'); return; }
+  lbEl.classList.add('on');
+  lbIdxEl.textContent = '第 ' + (curLevel + 1) + ' 关';
+  lbNameEl.textContent = lvl.name;
+  lbDescEl.textContent = lvl.desc;
+  applyBar(lvl.goal.call(lvl));
+}
+
+function loadLevel(idx) {
+  curLevel = idx;
+  won = false;
+  tick = 0;
+  winEl.classList.remove('on');
+  mat.fill(EMPTY); life.fill(0); moved.fill(0);
+  frame = 0;
+
+  var lvl = idx >= 0 ? LEVELS[idx] : null;
+  if (lvl) lvl.setup.call(lvl);
+  else MAPS[curMap].setup();
+
+  buildTools(lvl ? lvl.palette : PALETTE_ALL);
+  selectMat(lvl ? lvl.start : SAND);
+  syncChips();
+  syncMaps();
+  mapsEl.classList.toggle('on', !lvl);
+  updateHud();
+
+  paused = false;
+  syncPause();
+  clearEl.style.display = lvl ? 'none' : '';
+  resetEl.textContent = lvl ? '重试' : '重置';
+}
+
+function checkWin() {
+  var lvl = LEVELS[curLevel];
+  var g = lvl.goal.call(lvl);
+  applyBar(g);
+  if (g.cur >= g.max) {
+    won = true;
+    done[curLevel] = true;
+    persistDone();
+    syncChips();
+    winTitleEl.textContent = '通关 · ' + lvl.name;
+    winSubEl.textContent = curLevel < LEVELS.length - 1
+      ? '第 ' + (curLevel + 2) + ' 关已经解锁'
+      : '全部关卡通关了！去自由模式随便玩吧';
+    winNextEl.textContent = curLevel < LEVELS.length - 1 ? '下一关' : '自由模式';
+    winEl.classList.add('on');
+  }
+}
+
+/* ---------------- 通用控件 ---------------- */
+
+var brushEl = document.getElementById('brush');
+var brushValEl = document.getElementById('brushVal');
+brushEl.addEventListener('input', function () {
+  brushSize = Number(brushEl.value);
+  brushValEl.textContent = String(brushSize);
+});
+
+var paused = false;
+var pauseEl = document.getElementById('pause');
+
+function syncPause() {
+  pauseEl.textContent = paused ? '继续' : '暂停';
+  pauseEl.classList.toggle('on', paused);
+}
+
+pauseEl.addEventListener('click', function () {
+  if (won) return;
+  paused = !paused;
+  syncPause();
+});
+
+clearEl.addEventListener('click', function () {
+  if (curLevel >= 0) return;
+  mat.fill(EMPTY); life.fill(0); moved.fill(0);
+});
+
+resetEl.addEventListener('click', function () {
+  loadLevel(curLevel);
+});
+
+document.getElementById('winRetry').addEventListener('click', function () {
+  loadLevel(curLevel);
+});
+
+winNextEl.addEventListener('click', function () {
+  if (curLevel < LEVELS.length - 1) loadLevel(curLevel + 1);
+  else loadLevel(-1);
+});
+
+document.getElementById('sound').addEventListener('click', function () {
+  var on = SND.toggle();
+  this.textContent = on ? '声音' : '静音';
+  this.classList.toggle('on', on);
+});
+
+function audioGate() { SND.boot(); }
+window.addEventListener('pointerdown', audioGate);
+window.addEventListener('keydown', audioGate);
+
+manualBtn.addEventListener('click', openManual);
+document.getElementById('manualClose').addEventListener('click', closeManual);
+manualEl.addEventListener('click', function (ev) {
+  if (ev.target === manualEl) closeManual();
+});
+
+document.getElementById('save').addEventListener('click', function () {
+  canvas.toBlob(function (blob) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'sandbox-' + Date.now() + '.png';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  });
+});
+
+window.addEventListener('keydown', function (e) {
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  if (e.key === 'Escape') { closeManual(); return; }
+  if (manualEl.classList.contains('on')) return;
+  if (e.key === ' ') {
+    e.preventDefault();
+    pauseEl.click();
+    return;
+  }
+  var id = availKeys[e.key.toLowerCase()];
+  if (id !== undefined) selectMat(id);
+});
+
+/* ------------------------------------------------------------------ *
+ *  循环
+ * ------------------------------------------------------------------ */
+
+var STEP = 1 / 60;
+var acc = 0;
+var last = performance.now();
+
+function loop(now) {
+  var dt = (now - last) / 1000;
+  last = now;
+  if (dt > 0.1) dt = 0.1;
+
+  if (!paused && !won) {
+    acc += dt;
+    var guard = 0;
+    while (acc >= STEP && guard < 3) { step(); acc -= STEP; guard++; }
+    if (guard >= 3) acc = 0;
+
+    if (curLevel >= 0) {
+      tick++;
+      if (tick % 8 === 0) checkWin();
+    }
+  }
+  render();
+  if ((tick & 7) === 0) SND.update(fireCount, steamCount);
+  requestAnimationFrame(loop);
+}
+
+buildChips();
+buildMaps();
+loadLevel(-1);
+render();
+requestAnimationFrame(loop);
+
+// 调试钩子：?debug 时暴露内部句柄，方便自动化测试
+if (location.search.indexOf('debug') >= 0) {
+  window.__sb = {
+    W: W, H: H, mat: mat, life: life,
+    put: put, step: step, render: render, setMap: setMap, MAPS: MAPS,
+    paintAt: function (x, y) { paintAt(x, y); },
+    setBrush: function (m, s) { brushMat = m; if (s) brushSize = s; },
+    setPaused: function (v) { paused = !!v; },
+    SND: SND,
+    loadLevel: loadLevel,
+    checkWin: checkWin,
+    LEVELS: LEVELS,
+    cur: function () { return curLevel; },
+    won: function () { return won; },
+    goal: function () { return curLevel >= 0 ? LEVELS[curLevel].goal.call(LEVELS[curLevel]) : null; },
+    fillRect: fillRect,
+    countIn: countIn,
+    M: { EMPTY: EMPTY, SAND: SAND, WATER: WATER, STONE: STONE, WALL: WALL, OIL: OIL,
+         PLANT: PLANT, FIRE: FIRE, ACID: ACID, LAVA: LAVA, ICE: ICE,
+         GUNPOWDER: GUNPOWDER, STEAM: STEAM, SMOKE: SMOKE,
+         SPRING: SPRING, VENT: VENT, DRAIN: DRAIN, STEAMER: STEAMER }
+  };
+}
+
+})();
+</script>
+</body>
+</html>

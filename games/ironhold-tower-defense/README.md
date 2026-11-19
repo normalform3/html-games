@@ -2,7 +2,7 @@
 
 **Ironhold Tower Defense** — 一款受《王国保卫战》启发的轻量中世纪塔防游戏。纯 HTML / CSS / JavaScript 单文件实现，无外部图片、字体和音频依赖。
 
-[直接开始游戏](index.html)
+游戏文件：[index.html](index.html)。克隆仓库后在本地打开，或参考下方说明启动静态服务器。
 
 ![铁壁王国游戏预览](preview.png)
 

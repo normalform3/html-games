@@ -10,7 +10,7 @@
 
 | 游戏 | 类型 | 玩法关键词 | 入口 |
 | --- | --- | --- | --- |
-| **铁壁王国** | 中世纪塔防 | 弓箭塔 / 法师塔 / 兵营士兵 / 移动集结点 / 10 波 Boss | [查看](games/ironhold-tower-defense/) |
+| **铁壁王国** | 中世纪塔防 | 3 张地图 / 1–3 条路线 / 弓箭塔 / 法师塔 / 兵营士兵 / 10 波 Boss | [查看](games/ironhold-tower-defense/) |
 | **元素沙盒** | 粒子物理沙盒 | 13 种材料 / 4 种自动装置 / 6 个关卡 / 3 张地图 / 实时合成音效 | [查看](games/element-sandbox/) |
 
 ## 本地运行
@@ -37,10 +37,15 @@ http://localhost:8000/games/ironhold-tower-defense/
 html-games/
 ├── README.md
 └── games/
+    ├── element-sandbox/
+    │   ├── index.html
+    │   ├── README.md
+    │   └── preview.png
     └── ironhold-tower-defense/
-        ├── index.html      # 游戏本体
-        ├── README.md       # 游戏说明
-        └── preview.png     # 预览图
+        ├── index.html
+        ├── README.md
+        ├── preview.png
+        └── preview-levels.png
 ```
 
 ## 收录约定
